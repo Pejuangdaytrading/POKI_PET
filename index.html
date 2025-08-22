@@ -7,7 +7,8 @@
     .header { background: #4CAF50; color: white; padding: 10px; text-align: center; }
     .user-info { background: #eafbea; padding: 5px; text-align: center; }
     .coins { font-weight: bold; margin: 10px; }
-    .card { border: 2px solid orange; background: #fff3cd; padding: 15px; margin: 10px auto; width: 200px; border-radius: 8px; text-align: center; }
+    .farm { display: flex; justify-content: center; flex-wrap: wrap; }
+    .card { border: 2px solid orange; background: #fff3cd; padding: 15px; margin: 10px; width: 200px; border-radius: 8px; text-align: center; }
     button { margin: 3px; }
   </style>
 </head>
@@ -18,10 +19,34 @@
   </div>
   <div id="coins" class="coins">Coins: 0</div>
 
-  <div class="card">
-    <div>🐔</div>
-    <button onclick="raise()">Raise</button>
-    <button onclick="collect()">Collect</button>
+  <div class="farm">
+    <!-- Slot 1 -->
+    <div class="card">
+      <div>🐔</div>
+      <button onclick="raise(1)">Raise</button>
+      <button onclick="collect(1)">Collect</button>
+    </div>
+
+    <!-- Slot 2 -->
+    <div class="card">
+      <div>🦆</div>
+      <button onclick="raise(2)">Raise</button>
+      <button onclick="collect(2)">Collect</button>
+    </div>
+
+    <!-- Slot 3 -->
+    <div class="card">
+      <div>🐐</div>
+      <button onclick="raise(3)">Raise</button>
+      <button onclick="collect(3)">Collect</button>
+    </div>
+
+    <!-- Slot 4 -->
+    <div class="card">
+      <div>🐄</div>
+      <button onclick="raise(4)">Raise</button>
+      <button onclick="collect(4)">Collect</button>
+    </div>
   </div>
 
   <script>
@@ -33,30 +58,36 @@
       const telegram_id = "12345";  
       const username = "piki";      
 
-      const res = await fetch("http://localhost:5000/api/user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ telegram_id, username })
-      });
+      try {
+        const res = await fetch("http://localhost:5000/api/user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ telegram_id, username })
+        });
 
-      const data = await res.json();
-      currentUser = data;
+        const data = await res.json();
+        currentUser = data;
 
-      document.getElementById("user").innerText = `User: ${data.username} (ID: ${data.telegram_id})`;
-      document.getElementById("coins").innerText = `Coins: ${data.coins}`;
+        document.getElementById("user").innerText = `User: ${data.username} (ID: ${data.telegram_id})`;
+        document.getElementById("coins").innerText = `Coins: ${data.coins}`;
+      } catch (err) {
+        console.error("Init error:", err);
+      }
     }
 
-    // contoh aksi Raise (dummy update frontend)
-    function raise() {
-      alert("Your chicken is growing! 🐣");
+    // contoh aksi Raise
+    function raise(slot) {
+      alert(`Slot ${slot}: Pet is growing! 🐣`);
     }
 
-    // contoh aksi Collect (sementara +10 coins)
-    async function collect() {
+    // contoh aksi Collect (sementara tambah 10 coins frontend)
+    async function collect(slot) {
       if (!currentUser) return;
       currentUser.coins += 10;
       document.getElementById("coins").innerText = `Coins: ${currentUser.coins}`;
-      // nanti bisa ditambah API call ke backend untuk update
+      alert(`Slot ${slot}: Collected reward! +10 coins`);
+
+      // nanti bisa dihubungkan ke backend API update
     }
 
     window.onload = initUser;
