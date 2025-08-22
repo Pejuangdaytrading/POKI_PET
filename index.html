@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crypto Animal Farm - Demo</title>
+  <title>Poki Pet - Crypto Animal Farm</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; }
     header { background: #4CAF50; color: white; padding: 10px; text-align: center; }
+    .user-info { background:#e0ffe0; padding:8px; font-size:14px; border-bottom:1px solid #ccc; }
     .balance { margin: 10px; font-weight: bold; }
     .farm-area { display: flex; justify-content: center; gap: 20px; margin: 20px; flex-wrap: wrap; }
     .slot {
@@ -27,8 +28,13 @@
 <body>
 
   <header>
-    Crypto Animal Farm (Demo)
+    Poki Pet - Crypto Animal Farm 🐔
   </header>
+
+  <!-- User Info -->
+  <div id="userInfo" class="user-info">
+    Loading user...
+  </div>
 
   <div class="balance">
     Coins: <span id="coins">0</span>
@@ -79,13 +85,23 @@
     <button onclick="showTab('menuPage')">☰ Menu</button>
   </div>
 
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
+/* === Telegram WebApp Init === */
+let tg = window.Telegram.WebApp;
+tg.expand();
+
+let user = tg.initDataUnsafe?.user || { id: "guest", first_name: "Guest" };
+document.getElementById("userInfo").innerText =
+  `User: ${user.first_name} (ID: ${user.id})`;
+
+/* === Game Logic === */
 let coins = localStorage.getItem("coins") ? parseInt(localStorage.getItem("coins")) : 0;
 document.getElementById("coins").textContent = coins;
 
-// Animal slots (4 slots)
+// 4 slots (1 free chicken, 3 locked)
 let slots = [
-  { unlocked: true, animal: { emoji: "🐔", reward: 15 }, progress: 0, raising: false, timer: null }, // Slot 1 ayam gratis
+  { unlocked: true, animal: { emoji: "🐔", reward: 15 }, progress: 0, raising: false, timer: null },
   { unlocked: false, price: 100, animal: null, progress: 0, raising: false, timer: null },
   { unlocked: false, price: 300, animal: null, progress: 0, raising: false, timer: null },
   { unlocked: false, price: 500, animal: null, progress: 0, raising: false, timer: null }
@@ -93,26 +109,18 @@ let slots = [
 
 let selectedSlot = null;
 
-// Render farm slots
 function renderFarm() {
   let farm = document.getElementById("farmSlots");
   farm.innerHTML = "";
-
   slots.forEach((slot, i) => {
     let id = i+1;
     let div = document.createElement("div");
     div.className = "slot";
 
     if (!slot.unlocked) {
-      div.innerHTML = `
-        <div>🔒 Locked</div>
-        <button onclick="unlockSlot(${id})">Unlock (${slot.price} coins)</button>
-      `;
+      div.innerHTML = `<div>🔒 Locked</div><button onclick="unlockSlot(${id})">Unlock (${slot.price} coins)</button>`;
     } else if (!slot.animal) {
-      div.innerHTML = `
-        <div>❓ Empty</div>
-        <button onclick="selectSlot(${id})">Buy Animal</button>
-      `;
+      div.innerHTML = `<div>❓ Empty</div><button onclick="selectSlot(${id})">Buy Animal</button>`;
     } else {
       div.innerHTML = `
         <div id="animal${id}">${slot.animal.emoji}</div>
@@ -121,54 +129,39 @@ function renderFarm() {
         <button onclick="collectAnimal(${id})">Collect</button>
       `;
     }
-
     farm.appendChild(div);
   });
 }
-
 renderFarm();
 
-// Unlock slot
 function unlockSlot(id) {
   let slot = slots[id-1];
   if (coins < slot.price) { alert("Not enough coins!"); return; }
   coins -= slot.price;
-  localStorage.setItem("coins", coins);
-  document.getElementById("coins").textContent = coins;
+  saveCoins();
   slot.unlocked = true;
   renderFarm();
 }
 
-// Select slot for shop
-function selectSlot(id) {
-  selectedSlot = id;
-  showTab('shopPage');
-}
+function selectSlot(id) { selectedSlot = id; showTab('shopPage'); }
 
-// Buy animal
 function buyAnimal(slotId, emoji, price, reward) {
   if (coins < price) { alert("Not enough coins!"); return; }
   let slot = slots[slotId-1];
   if (!slot.unlocked) { alert("Slot locked!"); return; }
-  coins -= price;
-  localStorage.setItem("coins", coins);
-  document.getElementById("coins").textContent = coins;
-
+  coins -= price; saveCoins();
   slot.animal = { emoji, reward };
   renderFarm();
   alert("You bought a new " + emoji);
   showTab('farmPage');
 }
 
-// Raise animal
 function raiseAnimal(id) {
   let slot = slots[id-1];
   if (!slot.animal) return;
   if (slot.raising) { alert("Already raising!"); return; }
   slot.progress = 0; slot.raising = true;
-
   document.getElementById("animal"+id).textContent = slot.animal.emoji;
-
   slot.timer = setInterval(() => {
     slot.progress += 10;
     document.getElementById("progressBar"+id).style.width = slot.progress + "%";
@@ -180,39 +173,30 @@ function raiseAnimal(id) {
   }, 1000);
 }
 
-// Collect
 function collectAnimal(id) {
   let slot = slots[id-1];
   if (slot.progress < 100) { alert("Not ready!"); return; }
-  coins += slot.animal.reward;
-  localStorage.setItem("coins", coins);
-  document.getElementById("coins").textContent = coins;
+  coins += slot.animal.reward; saveCoins();
   document.getElementById("animal"+id).textContent = slot.animal.emoji;
   document.getElementById("progressBar"+id).style.width = "0%";
   slot.progress = 0;
 }
 
-// Deposit
-function deposit(amount) {
-  coins += amount;
-  localStorage.setItem("coins", coins);
-  document.getElementById("coins").textContent = coins;
-  alert("Deposited " + amount + " coins!");
-}
+function deposit(amount) { coins += amount; saveCoins(); alert("Deposited " + amount + " coins!"); }
 
-// Withdraw
 function withdraw() {
   let amt = parseInt(document.getElementById("withdrawAmount").value);
   if (isNaN(amt) || amt <= 0) { alert("Enter valid amount!"); return; }
   if (amt < 50) { alert("Minimum withdraw 50 coins!"); return; }
   if (coins < amt) { alert("Not enough coins!"); return; }
-  coins -= amt;
-  localStorage.setItem("coins", coins);
-  document.getElementById("coins").textContent = coins;
-  alert("Withdrew " + amt + " coins (dummy).");
+  coins -= amt; saveCoins(); alert("Withdrew " + amt + " coins (dummy).");
 }
 
-// Tab navigation
+function saveCoins() {
+  localStorage.setItem("coins", coins);
+  document.getElementById("coins").textContent = coins;
+}
+
 function showTab(tab) {
   document.querySelectorAll(".page").forEach(p => p.style.display = "none");
   document.getElementById(tab).style.display = "block";
