@@ -25,6 +25,50 @@ header {
   text-align: center;
   letter-spacing: 1px;
 }
+/* ==== SLOT LOCKED ==== */
+.slot.locked {
+  opacity: 0.7;
+  background: #f1f1f1;
+}
+
+.slot.locked .pet-name {
+  color: #888;
+}
+
+.slot.locked button {
+  background: #bbb;
+  color: #444;
+}
+
+/* ==== SHOP & INVENTORY CARD ==== */
+#shop-items .slot, 
+#inventory-list .slot {
+  text-align: center;
+  padding: 15px 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 14px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#shop-items .slot:hover,
+#inventory-list .slot:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* ==== PET ICON IN SHOP ==== */
+#shop-items .slot .pet-emoji {
+  display: block;
+  font-size: 48px;
+  margin: 10px auto 5px auto;
+}
+
+#inventory-list .slot .pet-emoji {
+  display: block;
+  font-size: 42px;
+  margin: 10px auto 5px auto;
+}
+
 
 /* ==== CONTAINER ==== */
 .container {
