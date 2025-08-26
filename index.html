@@ -4,249 +4,249 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Poki Pet</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body { margin:0; font-family: 'Comic Sans MS', cursive, sans-serif; background:#f7f9fc; }
-    header { background:#3daee9; color:#fff; padding:12px; text-align:center; font-size:20px; font-weight:bold; }
-    .user-info { text-align:center; margin:10px 0; }
-    h2 { margin:15px 0; text-align:center; }
-    .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:10px; }
+    body { font-family: 'Comic Sans MS', sans-serif; margin:0; background:#f7f9fc; }
+    header { background:#4aa3df; color:white; padding:10px; text-align:center; font-size:20px; font-weight:bold; }
+    .user-info { text-align:center; font-size:14px; padding:5px; color:#333; }
+    .page { display:none; padding:15px; }
+    h2 { margin:10px 0; }
+
+    /* Grid */
+    .grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; }
     .card {
-      background:#fff; border-radius:12px; box-shadow:0 3px 6px rgba(0,0,0,0.1);
-      padding:10px; text-align:center;
+      border-radius:12px; padding:15px; text-align:center; color:#333;
+      box-shadow:0 3px 6px rgba(0,0,0,0.1); font-size:14px;
     }
-    .card.locked { background:#f3f3f3; color:#888; }
-    .pet-emoji { font-size:32px; margin:6px; }
-    .progress { height:8px; background:#eee; border-radius:5px; margin:6px 0; overflow:hidden; }
-    .progress-bar { height:100%; width:0%; background:#4caf50; transition:width 0.3s; }
+    .card img { width:40px; height:40px; }
+    .slot-locked { background:#eee; color:#777; }
+    .slot-empty { background:#fff; }
+
+    /* Shop Cards by Pet */
+    .pet-chicken { background:#fffbe6; }
+    .pet-duck { background:#e6fff5; }
+    .pet-goat { background:#f9e6ff; }
+    .pet-cow { background:#ffe6e6; }
+
+    /* Progress */
+    .progress { width:100%; height:10px; background:#ddd; border-radius:6px; margin:8px 0; }
+    .progress-bar { height:10px; width:0%; background:#4caf50; border-radius:6px; transition:width 0.3s; }
+
+    /* Buttons */
     button {
-      background:#ffc107; border:none; padding:6px 12px; margin:6px 0; border-radius:20px;
-      font-weight:bold; cursor:pointer;
+      background:#ffca28; border:none; border-radius:8px;
+      padding:6px 12px; font-weight:bold; cursor:pointer; margin-top:6px;
     }
-    button:disabled { background:#ccc; cursor:not-allowed; }
-    nav {
-      position:fixed; bottom:0; left:0; right:0; background:#3daee9; display:flex;
-      justify-content:space-around; padding:6px 0; border-top:2px solid #2d8bb3;
-    }
-    nav button { background:none; border:none; color:#fff; font-size:12px; display:flex; flex-direction:column; align-items:center; }
-    nav button span { font-size:18px; }
-    .page { display:none; padding-bottom:70px; }
-    .page.active { display:block; }
+    button:hover:not(:disabled) { background:#ffc107; }
+    button:disabled { background:#ccc; color:#666; cursor:not-allowed; }
+
+    /* Footer Menu */
+    .menu { position:fixed; bottom:0; left:0; right:0; background:#4aa3df; display:flex;
+      justify-content:space-around; padding:8px 0; }
+    .menu button { background:none; border:none; color:white; font-size:12px; display:flex; flex-direction:column; align-items:center; }
   </style>
 </head>
 <body>
   <header>Poki Pet</header>
-  <div class="user-info">
-    User: <span id="username"></span> | Coins: <span id="coins">0</span>
-  </div>
+  <div id="userInfo" class="user-info">Loading...</div>
 
-  <!-- Farm -->
-  <div id="farmPage" class="page active">
+  <!-- FARM -->
+  <div id="farmPage" class="page" style="display:block;">
     <h2>My Farm</h2>
     <div id="farmSlots" class="grid"></div>
   </div>
 
-  <!-- Shop -->
+  <!-- SHOP -->
   <div id="shopPage" class="page">
     <h2>Shop - Buy New Animals</h2>
-    <div id="shopList" class="grid"></div>
+    <div id="shopItems" class="grid"></div>
   </div>
 
-  <!-- Inventory -->
+  <!-- INVENTORY -->
   <div id="inventoryPage" class="page">
     <h2>Inventory</h2>
-    <div id="inventoryList" class="grid"></div>
+    <div id="inventoryItems" class="grid"></div>
   </div>
 
-  <!-- Deposit -->
+  <!-- DEPOSIT -->
   <div id="depositPage" class="page">
     <h2>Deposit</h2>
-    <button onclick="deposit(1)">Deposit 1 USDT → 10000 $POKI</button>
-    <button onclick="deposit(10000)">Deposit 10000 $POKI</button>
+    <button onclick="deposit(1,'USDT')">Deposit 1 USDT → 10000 $POKI</button>
+    <button onclick="deposit(10000,'POKI')">Deposit 10000 $POKI</button>
   </div>
 
-  <!-- Withdraw -->
+  <!-- WITHDRAW -->
   <div id="withdrawPage" class="page">
     <h2>Withdraw</h2>
     <input type="number" id="withdrawAmount" placeholder="Amount $POKI">
     <button onclick="withdraw()">Withdraw</button>
   </div>
 
-  <!-- Footer Menu -->
-  <nav>
-    <button onclick="showPage('farmPage')"><span>🏡</span>Farm</button>
-    <button onclick="showPage('shopPage')"><span>🛒</span>Shop</button>
-    <button onclick="showPage('inventoryPage')"><span>📦</span>Inventory</button>
-    <button onclick="showPage('depositPage')"><span>💰</span>Deposit</button>
-    <button onclick="showPage('withdrawPage')"><span>🏦</span>Withdraw</button>
-  </nav>
+  <!-- MENU -->
+  <div id="menuPage" class="page"><h2>Menu</h2><p>@PokiPetBot</p></div>
 
+  <!-- FOOTER MENU -->
+  <div class="menu">
+    <button onclick="showTab('farmPage')">🏡<span>Farm</span></button>
+    <button onclick="showTab('shopPage')">🛒<span>Shop</span></button>
+    <button onclick="showTab('inventoryPage')">📦<span>Inventory</span></button>
+    <button onclick="showTab('depositPage')">💰<span>Deposit</span></button>
+    <button onclick="showTab('withdrawPage')">🏦<span>Withdraw</span></button>
+    <button onclick="showTab('menuPage')">⚙️<span>Menu</span></button>
+  </div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js"></script>
 <script>
-/* === Supabase Init === */
-const SUPABASE_URL = "https://nxveoqzeoiuuweypawdd.supabase.co"; 
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dmVvcXplb2l1dXdleXBhd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDgxMDcsImV4cCI6MjA3MTQyNDEwN30.pnoJHATNksB5rRbHJjQvUSatn6HW79jfEdFoBRt0zAM";
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient("https://nxveoqzeoiuuweypawdd.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dmVvcXplb2l1dXdleXBhd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDgxMDcsImV4cCI6MjA3MTQyNDEwN30.pnoJHATNksB5rRbHJjQvUSatn6HW79jfEdFoBRt0zAM");
+const tg = window.Telegram.WebApp; tg.expand();
+const tgUser = tg.initDataUnsafe?.user || { id:999, username:"DevTester" };
+let currentUser={};
 
-let tg = window.Telegram.WebApp;
-tg.expand();
-let tgUser = tg.initDataUnsafe?.user || { id: 999, username:"DevTester" };
-
-let userId = tgUser.id;
-let username = tgUser.username || tgUser.first_name;
-document.getElementById("username").textContent = username;
-
-let currentUser = {};
-let petsList = [];
-let userPets = [];
-let farmSlots = 4;
-let pendingSlot = null;
-
-/* === Page Control === */
-function showPage(id){
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-}
-
-/* === Load Data === */
-async function loadData(){
-  let { data: users } = await sb.from("users").select("*").eq("id", userId).single();
-  currentUser = users;
-  document.getElementById("coins").textContent = currentUser.coins;
-
-  let { data: pets } = await sb.from("pets").select("*");
-  petsList = pets;
-
-  let { data: up } = await sb.from("user_pets").select("*, pets(*)").eq("user_id", userId);
-  userPets = up;
-
+/* Load user */
+async function loadUser(){
+  let {data:users}=await sb.from("users").select("*").eq("id",tgUser.id).single();
+  if(!users){
+    await sb.from("users").insert({id:tgUser.id,username:tgUser.username,coins:1000,farm_slots:1});
+    users={id:tgUser.id,username:tgUser.username,coins:1000,farm_slots:1};
+  }
+  currentUser=users;
+  document.getElementById("userInfo").innerText=`User: ${users.username} | Coins: ${users.coins}`;
   renderFarm();
   renderShop();
   renderInventory();
 }
 
-/* === Render Farm === */
-function renderFarm(){
-  const farmDiv = document.getElementById("farmSlots");
-  farmDiv.innerHTML = "";
-  for(let i=1;i<=farmSlots;i++){
-    let pet = userPets.find(p=>p.slot===i);
-    let card = document.createElement("div");
-    card.className="card";
-    if(pet){
-      let petData = petsList.find(pp=>pp.id===pet.pet_id);
-      let last = new Date(pet.last_claim);
-      let now = new Date();
-      let elapsed = Math.floor((now-last)/1000);
-      let ready = elapsed >= petData.interval;
-      let pct = Math.min(100, (elapsed/petData.interval)*100);
-      card.innerHTML=`
-        <div class="pet-emoji">${petData.emoji}</div>
-        <div>${petData.name}</div>
-        <div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>
-        <button onclick="claim(${pet.id},${petData.reward},${petData.interval})" ${ready?"":"disabled"}>Claim +${petData.reward}</button><br>
-        <button onclick="openInventoryForSlot(${i})">Replace</button>
-      `;
-    }else{
-      card.innerHTML=`<div>Empty</div><button onclick="openInventoryForSlot(${i})">Add Pet</button>`;
+/* FARM */
+async function renderFarm(){
+  let farm=document.getElementById("farmSlots");
+  farm.innerHTML="";
+  // get pets in farm
+  let {data:userPets}=await sb.from("user_pets").select("*, pets(*)").eq("user_id",tgUser.id);
+  for(let i=1;i<=4;i++){
+    let slotPet=userPets.find(p=>p.slot===i);
+    let div=document.createElement("div"); div.className="card";
+    if(i<=currentUser.farm_slots){
+      if(slotPet){
+        div.innerHTML=`
+          <div>${slotPet.pets.emoji} ${slotPet.pets.name}</div>
+          <div class="progress"><div class="progress-bar" id="progress-${slotPet.id}"></div></div>
+          <button id="claim-${slotPet.id}" onclick="claim(${slotPet.id},${slotPet.pets.reward},${slotPet.pets.interval})">Claim +${slotPet.pets.reward}</button>
+        `;
+        startProgressTimer(slotPet.id, slotPet.last_claim, slotPet.pets.interval);
+      } else {
+        div.innerHTML=`<div class="slot-empty">Empty</div>`;
+      }
+    } else {
+      let cost=i*500;
+      div.className="card slot-locked";
+      div.innerHTML=`Locked<br><button onclick="unlockSlot(${i},${cost})">Unlock (${cost} $POKI)</button>`;
     }
-    farmDiv.appendChild(card);
+    farm.appendChild(div);
   }
 }
 
-/* === Render Shop === */
-function renderShop(){
-  const shopDiv = document.getElementById("shopList");
-  shopDiv.innerHTML="";
-  petsList.forEach(p=>{
-    let card=document.createElement("div");
-    card.className="card";
-    card.style.border="2px solid #3daee9";
-    card.innerHTML=`
-      <div class="pet-emoji">${p.emoji}</div>
-      <div><b>${p.name}</b></div>
-      <div>${p.price} $POKI</div>
-      <div>Reward: ${p.reward} / ${p.interval}s</div>
-      <button onclick="buyPet(${p.id},${p.price})">Buy</button>
-    `;
-    shopDiv.appendChild(card);
+/* Shop */
+async function renderShop(){
+  let {data:pets}=await sb.from("pets").select("*");
+  let shop=document.getElementById("shopItems"); shop.innerHTML="";
+  pets.forEach(p=>{
+    let colorClass=p.name.toLowerCase()=="chicken"?"pet-chicken":p.name.toLowerCase()=="duck"?"pet-duck":p.name.toLowerCase()=="goat"?"pet-goat":"pet-cow";
+    let div=document.createElement("div"); div.className="card "+colorClass;
+    div.innerHTML=`${p.emoji} <b>${p.name}</b><br>${p.price} $POKI<br>Reward: ${p.reward} / ${p.interval}s<br>
+      <button onclick="buyPet(${p.id})">Buy</button>`;
+    shop.appendChild(div);
   });
 }
 
-/* === Render Inventory === */
-function renderInventory(){
-  const invDiv = document.getElementById("inventoryList");
-  invDiv.innerHTML="";
-  let invPets=userPets.filter(p=>!p.slot);
-  if(invPets.length===0){ invDiv.innerHTML="No pets in inventory"; return;}
-  invPets.forEach(p=>{
-    let pd=petsList.find(pp=>pp.id===p.pet_id);
-    let card=document.createElement("div");
-    card.className="card";
-    card.style.border="2px solid #ffc107";
-    card.innerHTML=`
-      <div class="pet-emoji">${pd.emoji}</div>
-      <div><b>${pd.name}</b></div>
-      <button onclick="placePet(${p.id})">Place</button>
-    `;
-    invDiv.appendChild(card);
+/* Inventory */
+async function renderInventory(){
+  let {data:userPets}=await sb.from("user_pets").select("*, pets(*)").eq("user_id",tgUser.id);
+  let inv=document.getElementById("inventoryItems"); inv.innerHTML="";
+  if(userPets.length==0){inv.innerHTML="<p>No pets in inventory</p>"; return;}
+  userPets.forEach(up=>{
+    let colorClass=up.pets.name.toLowerCase()=="chicken"?"pet-chicken":up.pets.name.toLowerCase()=="duck"?"pet-duck":up.pets.name.toLowerCase()=="goat"?"pet-goat":"pet-cow";
+    let div=document.createElement("div"); div.className="card "+colorClass;
+    div.innerHTML=`${up.pets.emoji} ${up.pets.name}`;
+    inv.appendChild(div);
   });
 }
 
-/* === Farm ↔ Inventory Actions === */
-function openInventoryForSlot(slotId){
-  pendingSlot = slotId;
-  showPage("inventoryPage");
-}
-
-async function placePet(userPetId){
-  if(!pendingSlot){ alert("Select farm slot first!"); return; }
-
-  // kosongkan slot kalau sudah ada pet (replace)
-  await sb.from("user_pets").update({slot:null}).eq("user_id",userId).eq("slot",pendingSlot);
-
-  // assign pet baru ke slot
-  await sb.from("user_pets").update({slot:pendingSlot,last_claim:new Date().toISOString()}).eq("id",userPetId);
-
-  pendingSlot=null;
-  loadData();
-  showPage("farmPage");
-}
-
-/* === Claim === */
+/* Claim */
 async function claim(userPetId,reward,interval){
-  let now=new Date();
-  await sb.from("user_pets").update({last_claim: now}).eq("id",userPetId);
-  await sb.from("users").update({coins: currentUser.coins+reward}).eq("id",userId);
-  currentUser.coins+=reward;
-  document.getElementById("coins").textContent=currentUser.coins;
-  loadData();
+  let btn=document.getElementById("claim-"+userPetId); btn.disabled=true;
+  let newCoins=currentUser.coins+reward;
+  await sb.from("users").update({coins:newCoins}).eq("id",tgUser.id);
+  await sb.from("user_pets").update({last_claim:new Date().toISOString()}).eq("id",userPetId);
+  currentUser.coins=newCoins;
+  document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
+  let bar=document.getElementById("progress-"+userPetId); if(bar) bar.style.width="0%";
+  startProgressTimer(userPetId,new Date(),interval);
 }
 
-/* === Buy Pet === */
-async function buyPet(petId,price){
-  if(currentUser.coins<price){alert("Not enough coins");return;}
-  await sb.from("users").update({coins:currentUser.coins-price}).eq("id",userId);
-  await sb.from("user_pets").insert([{user_id:userId,pet_id:petId,slot:null,last_claim:new Date()}]);
-  currentUser.coins-=price;
-  loadData();
+/* Timer */
+function startProgressTimer(id,lastClaim,interval){
+  let btn=document.getElementById("claim-"+id); let bar=document.getElementById("progress-"+id);
+  let last=new Date(lastClaim).getTime(); let next=last+interval*1000;
+  let timer=setInterval(()=>{
+    let now=Date.now(); let pct=((now-last)/(next-last))*100;
+    if(pct>=100){bar.style.width="100%"; btn.disabled=false; clearInterval(timer);}
+    else {bar.style.width=pct+"%"; btn.disabled=true;}
+  },1000);
 }
 
-/* === Deposit / Withdraw === */
-async function deposit(amount){
-  await sb.from("users").update({coins:currentUser.coins+10000}).eq("id",userId);
-  currentUser.coins+=10000;
-  loadData();
+/* Unlock Slot */
+async function unlockSlot(slot,cost){
+  if(currentUser.coins<cost){alert("Not enough $POKI!"); return;}
+  let newCoins=currentUser.coins-cost;
+  await sb.from("users").update({coins:newCoins,farm_slots:slot}).eq("id",tgUser.id);
+  currentUser.coins=newCoins; currentUser.farm_slots=slot;
+  document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
+  renderFarm();
 }
+
+/* Buy Pet */
+async function buyPet(petId){
+  let {data:pets}=await sb.from("pets").select("*").eq("id",petId).single();
+  if(currentUser.coins<pets.price){alert("Not enough $POKI!"); return;}
+  // find empty slot
+  let {data:userPets}=await sb.from("user_pets").select("*").eq("user_id",tgUser.id);
+  let slots=userPets.map(p=>p.slot);
+  let slotNum=1; while(slots.includes(slotNum)&&slotNum<=currentUser.farm_slots) slotNum++;
+  if(slotNum>currentUser.farm_slots){alert("No empty slot!"); return;}
+  await sb.from("user_pets").insert({user_id:tgUser.id,pet_id:petId,slot:slotNum,last_claim:new Date().toISOString()});
+  let newCoins=currentUser.coins-pets.price;
+  await sb.from("users").update({coins:newCoins}).eq("id",tgUser.id);
+  currentUser.coins=newCoins;
+  document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
+  renderFarm(); renderInventory();
+}
+
+/* Deposit */
+async function deposit(amount,currency){
+  let pokiAmt=currency=="USDT"?amount*10000:amount;
+  let newCoins=currentUser.coins+pokiAmt;
+  await sb.from("users").update({coins:newCoins}).eq("id",tgUser.id);
+  await sb.from("transactions").insert({user_id:tgUser.id,type:"deposit",amount:amount,currency:currency,poki_amount:pokiAmt,rate:currency=="USDT"?10000:1});
+  currentUser.coins=newCoins;
+  document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
+}
+
+/* Withdraw */
 async function withdraw(){
   let amt=parseInt(document.getElementById("withdrawAmount").value);
-  if(amt<=0||currentUser.coins<amt){alert("Invalid");return;}
-  await sb.from("users").update({coins:currentUser.coins-amt}).eq("id",userId);
-  currentUser.coins-=amt;
-  loadData();
+  if(isNaN(amt)||amt<=0)return;
+  if(currentUser.coins<amt){alert("Not enough $POKI!");return;}
+  let newCoins=currentUser.coins-amt;
+  await sb.from("users").update({coins:newCoins}).eq("id",tgUser.id);
+  await sb.from("transactions").insert({user_id:tgUser.id,type:"withdraw",amount:amt,currency:"$POKI",poki_amount:amt,rate:1});
+  currentUser.coins=newCoins;
+  document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
 }
 
-loadData();
+/* Show Tabs */
+function showTab(tab){document.querySelectorAll(".page").forEach(p=>p.style.display="none");document.getElementById(tab).style.display="block";}
+
+loadUser();
 </script>
 </body>
 </html>
