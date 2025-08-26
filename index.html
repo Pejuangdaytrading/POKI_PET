@@ -11,9 +11,7 @@
 </head>
 <body>
   <!-- Header -->
-  <header>
-    Poki Pet
-  </header>
+  <header>Poki Pet</header>
 
   <!-- User Info -->
   <div class="container">
@@ -93,7 +91,7 @@
     let coins = 0;
     let petsData = {};
     let timers = {};
-    const RATE = 10000; // fixed rate sementara
+    const RATE = 10000; // fixed sementara
 
     /* =========================
        PAGE SWITCHER
@@ -129,7 +127,7 @@
     }
 
     /* =========================
-       LOAD PETS
+       LOAD PETS DATA
     ========================== */
     async function loadPetsData() {
       let { data } = await sb.from("pets").select("*");
@@ -140,6 +138,10 @@
        RENDER FARM
     ========================== */
     async function renderFarm() {
+      // cek berapa slot user
+      let { data: userData } = await sb.from("users").select("farm_slots").eq("id", userId).single();
+      let totalSlots = userData?.farm_slots || 1;
+
       let { data } = await sb
         .from("user_pets")
         .select("*, pets(name,emoji,reward,interval)")
@@ -150,7 +152,7 @@
       let farmSlots = document.getElementById("farm-slots");
       farmSlots.innerHTML = "";
 
-      for (let slot = 1; slot <= 4; slot++) {
+      for (let slot = 1; slot <= totalSlots; slot++) {
         let petSlot = data.find(d => d.slot === slot);
 
         if (petSlot) {
@@ -181,7 +183,7 @@
           div.innerHTML = `
             <div class="pet-soil"><div class="soil"></div></div>
             <div class="pet-name">Empty</div>
-            <button>Add Pet</button>
+            <button disabled>Add Pet</button>
           `;
           farmSlots.appendChild(div);
         }
@@ -240,13 +242,20 @@
     async function renderShop() {
       let { data } = await sb.from("pets").select("*");
       let shop = document.getElementById("shop-items");
-      shop.innerHTML = "";
+      shop.innerHTML = '<div class="farm-grid"></div>';
+      let grid = shop.querySelector('.farm-grid');
+
       data.forEach(pet => {
-        shop.innerHTML += `
-          <div class="card">${pet.emoji} ${pet.name} - ${pet.price} $POKI 
-            (Reward: ${pet.reward} / ${pet.interval}s) <br>
-            <button onclick="buyPet(${pet.id}, ${pet.price})">Buy</button>
-          </div>`;
+        let card = document.createElement("div");
+        card.className = "slot";
+        card.innerHTML = `
+          <div class="pet-emoji">${pet.emoji}</div>
+          <div class="pet-name">${pet.name}</div>
+          <p>${pet.price} $POKI</p>
+          <p>Reward: ${pet.reward} / ${pet.interval}s</p>
+          <button onclick="buyPet(${pet.id}, ${pet.price})">Buy</button>
+        `;
+        grid.appendChild(card);
       });
     }
 
@@ -278,9 +287,40 @@
         inv.innerHTML = "<p>No pets in inventory</p>";
       } else {
         data.forEach(up => {
-          inv.innerHTML += `<div class="card">${up.pets.emoji} ${up.pets.name}</div>`;
+          inv.innerHTML += `
+            <div class="card">
+              ${up.pets.emoji} ${up.pets.name}
+              <button onclick="placePet(${up.id})">Place</button>
+            </div>`;
         });
       }
+    }
+
+    async function placePet(userPetId) {
+      // cek slot kosong
+      let { data: userData } = await sb.from("users").select("farm_slots").eq("id", userId).single();
+      let totalSlots = userData.farm_slots;
+
+      let { data: occupied } = await sb
+        .from("user_pets")
+        .select("slot")
+        .eq("user_id", userId)
+        .not("slot", "is", null);
+
+      let usedSlots = occupied.map(o => o.slot);
+      let emptySlot = null;
+      for (let i = 1; i <= totalSlots; i++) {
+        if (!usedSlots.includes(i)) { emptySlot = i; break; }
+      }
+
+      if (!emptySlot) {
+        alert("No empty slot available!");
+        return;
+      }
+
+      await sb.from("user_pets").update({ slot: emptySlot }).eq("id", userPetId);
+      renderFarm();
+      renderInventory();
     }
 
     /* =========================
