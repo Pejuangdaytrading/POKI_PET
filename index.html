@@ -86,15 +86,18 @@
 
     /* === Init User from DB === */
     async function initUser() {
-      console.log("Telegram User:", user, "ID parsed:", telegramId);
+      console.log("initDataUnsafe (raw):", tg.initDataUnsafe);
+      console.log("user object (parsed):", user);
+      console.log("telegramId (int):", telegramId);
 
-      let { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", telegramId)
-        .single();
-
-      console.log("Supabase Select:", data, error);
+    (async () => {
+    let { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", telegramId)
+    .single();
+  console.log("Supabase SELECT ->", data, error);
+})();
 
       if (error || !data) {
         let { data: newUser, error: errInsert } = await supabase
@@ -152,3 +155,4 @@
   </script>
 </body>
 </html>
+
