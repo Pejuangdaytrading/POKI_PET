@@ -5,6 +5,7 @@
   <title>Poki Pet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
 <body>
@@ -73,11 +74,15 @@ const SLOT_COSTS = {2:200, 3:500, 4:1000};
 
 /* ==== TELEGRAM WEBAPP ==== */
 window.Telegram.WebApp.ready();
-const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+const tg = window.Telegram.WebApp;
+const tgUser = tg.initDataUnsafe?.user;
+
 if (tgUser) {
   userId = tgUser.id;
   username = tgUser.username || tgUser.first_name;
   initUser();
+} else {
+  document.getElementById("user-info").innerText = "⚠️ Please open in Telegram";
 }
 
 /* ==== INIT USER ==== */
@@ -215,7 +220,7 @@ async function claimReward(userPetId, reward, interval) {
   let newTime = new Date().toISOString();
   await sb.from("user_pets").update({ last_claim: newTime }).eq("id", userPetId);
   await sb.from("transactions").insert([{ user_id: userId, type: "claim", amount: reward, currency: "$POKI" }]);
-  startTimer(userPetId, reward, interval, interval); // restart countdown
+  startTimer(userPetId, reward, interval, interval);
 }
 
 /* ==== INVENTORY ==== */
