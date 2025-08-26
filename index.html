@@ -70,34 +70,35 @@
   <!-- === SCRIPT === -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
+
   <script>
     /* === Supabase Init === */
-    const supabaseUrl = "https://nxveoqzeoiuuweypawdd.supabase.co";  // ganti
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dmVvcXplb2l1dXdleXBhd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDgxMDcsImV4cCI6MjA3MTQyNDEwN30.pnoJHATNksB5rRbHJjQvUSatn6HW79jfEdFoBRt0zAM";             // ganti
+    const supabaseUrl = "https://nxveoqzeoiuuweypawdd.supabase.co";   // ganti
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dmVvcXplb2l1dXdleXBhd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDgxMDcsImV4cCI6MjA3MTQyNDEwN30.pnoJHATNksB5rRbHJjQvUSatn6HW79jfEdFoBRt0zAM";              // ganti
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     /* === Telegram Init === */
     let tg = window.Telegram.WebApp;
     tg.expand();
-    let user = tg.initDataUnsafe?.user || { id: "0", first_name: "Guest" };
-    let telegramId = parseInt(user.id);  // FIX: pastikan integer
 
-    let coins = 0; // akan sync dari DB
+    let user = tg.initDataUnsafe?.user || { id: "0", first_name: "Guest" };
+    let telegramId = parseInt(user.id);
+    let coins = 0;
+
+    console.log("=== Debug Start ===");
+    console.log("initDataUnsafe:", tg.initDataUnsafe);
+    console.log("Parsed user:", user);
+    console.log("Parsed telegramId:", telegramId);
 
     /* === Init User from DB === */
     async function initUser() {
-      console.log("initDataUnsafe (raw):", tg.initDataUnsafe);
-      console.log("user object (parsed):", user);
-      console.log("telegramId (int):", telegramId);
+      let { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", telegramId)
+        .single();
 
-    (async () => {
-    let { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", telegramId)
-    .single();
-  console.log("Supabase SELECT ->", data, error);
-})();
+      console.log("Supabase SELECT result:", data, error);
 
       if (error || !data) {
         let { data: newUser, error: errInsert } = await supabase
@@ -105,7 +106,7 @@
           .insert({ id: telegramId, username: user.first_name, coins: 0 })
           .select()
           .single();
-        console.log("Supabase Insert:", newUser, errInsert);
+        console.log("Supabase INSERT result:", newUser, errInsert);
         coins = newUser ? newUser.coins : 0;
       } else {
         coins = data.coins;
@@ -115,6 +116,7 @@
       document.getElementById("userInfo").innerText =
         `User: ${user.first_name} (ID: ${telegramId})`;
     }
+
     initUser();
 
     /* === Deposit Function === */
@@ -123,10 +125,11 @@
       document.getElementById("coins").textContent = coins;
 
       await supabase.from("users").update({ coins }).eq("id", telegramId);
-
       await supabase
         .from("transactions")
         .insert({ user_id: telegramId, type: "deposit", amount });
+
+      console.log(`Deposited ${amount}, new balance: ${coins}`);
     }
 
     /* === Withdraw Function === */
@@ -139,11 +142,11 @@
       document.getElementById("coins").textContent = coins;
 
       await supabase.from("users").update({ coins }).eq("id", telegramId);
-
       await supabase
         .from("transactions")
         .insert({ user_id: telegramId, type: "withdraw", amount: amt });
 
+      console.log(`Withdrew ${amt}, new balance: ${coins}`);
       alert("Withdraw success (dummy, only DB updated)");
     }
 
@@ -155,4 +158,3 @@
   </script>
 </body>
 </html>
-
