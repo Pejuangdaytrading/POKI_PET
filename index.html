@@ -79,30 +79,38 @@
     /* === Telegram Init === */
     let tg = window.Telegram.WebApp;
     tg.expand();
-    let user = tg.initDataUnsafe?.user || { id: "guest", first_name: "Guest" };
-    document.getElementById("userInfo").innerText = `User: ${user.first_name} (ID: ${user.id})`;
+    let user = tg.initDataUnsafe?.user || { id: "0", first_name: "Guest" };
+    let telegramId = parseInt(user.id);  // FIX: pastikan integer
 
     let coins = 0; // akan sync dari DB
 
     /* === Init User from DB === */
     async function initUser() {
+      console.log("Telegram User:", user, "ID parsed:", telegramId);
+
       let { data, error } = await supabase
         .from("users")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", telegramId)
         .single();
+
+      console.log("Supabase Select:", data, error);
 
       if (error || !data) {
         let { data: newUser, error: errInsert } = await supabase
           .from("users")
-          .insert({ id: user.id, username: user.first_name, coins: 0 })
+          .insert({ id: telegramId, username: user.first_name, coins: 0 })
           .select()
           .single();
+        console.log("Supabase Insert:", newUser, errInsert);
         coins = newUser ? newUser.coins : 0;
       } else {
         coins = data.coins;
       }
+
       document.getElementById("coins").textContent = coins;
+      document.getElementById("userInfo").innerText =
+        `User: ${user.first_name} (ID: ${telegramId})`;
     }
     initUser();
 
@@ -111,14 +119,11 @@
       coins += amount;
       document.getElementById("coins").textContent = coins;
 
-      await supabase
-        .from("users")
-        .update({ coins })
-        .eq("id", user.id);
+      await supabase.from("users").update({ coins }).eq("id", telegramId);
 
       await supabase
         .from("transactions")
-        .insert({ user_id: user.id, type: "deposit", amount });
+        .insert({ user_id: telegramId, type: "deposit", amount });
     }
 
     /* === Withdraw Function === */
@@ -130,14 +135,11 @@
       coins -= amt;
       document.getElementById("coins").textContent = coins;
 
-      await supabase
-        .from("users")
-        .update({ coins })
-        .eq("id", user.id);
+      await supabase.from("users").update({ coins }).eq("id", telegramId);
 
       await supabase
         .from("transactions")
-        .insert({ user_id: user.id, type: "withdraw", amount: amt });
+        .insert({ user_id: telegramId, type: "withdraw", amount: amt });
 
       alert("Withdraw success (dummy, only DB updated)");
     }
