@@ -67,29 +67,55 @@
     <button onclick="showTab('menuPage')">☰ Menu</button>
   </div>
 
-  <!-- === SCRIPT === -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <!-- 1. load Telegram SDK -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <script>
-    /* === Supabase Init === */
-    const supabaseUrl = "https://nxveoqzeoiuuweypawdd.supabase.co";   // ganti
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dmVvcXplb2l1dXdleXBhd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDgxMDcsImV4cCI6MjA3MTQyNDEwN30.pnoJHATNksB5rRbHJjQvUSatn6HW79jfEdFoBRt0zAM";              // ganti
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+<!-- 2. load Supabase SDK -->
+<script src="https://unpkg.com/@supabase/supabase-js"></script>
 
-    /* === Telegram Init === */
-    let tg = window.Telegram.WebApp;
-    tg.expand();
+<!-- 3. baru script utama -->
+<script>
+  const supabaseUrl = "https://xxxx.supabase.co";
+  const supabaseKey = "ey...";
+  const sb = supabase.createClient(supabaseUrl, supabaseKey); // pakai nama sb
 
-    let user = tg.initDataUnsafe?.user || { id: "0", first_name: "Guest" };
-    let telegramId = parseInt(user.id);
-    let coins = 0;
+  let tg = window.Telegram.WebApp;
+  tg.expand();
 
-    console.log("=== Debug Start ===");
-    console.log("initDataUnsafe:", tg.initDataUnsafe);
-    console.log("Parsed user:", user);
-    console.log("Parsed telegramId:", telegramId);
+  let user = tg.initDataUnsafe?.user || { id: "999", first_name: "Tester" };
+  let telegramId = parseInt(user.id);
+  let coins = 0;
 
+  async function initUser() {
+    console.log("Telegram user:", user, telegramId);
+
+    let { data, error } = await sb
+      .from("users")
+      .select("*")
+      .eq("id", telegramId)
+      .single();
+
+    console.log("Supabase SELECT:", data, error);
+
+    if (error || !data) {
+      let { data: newUser, error: errInsert } = await sb
+        .from("users")
+        .insert({ id: telegramId, username: user.first_name, coins: 0 })
+        .select()
+        .single();
+      console.log("Supabase INSERT:", newUser, errInsert);
+      coins = newUser ? newUser.coins : 0;
+    } else {
+      coins = data.coins;
+    }
+
+    document.getElementById("coins").textContent = coins;
+    document.getElementById("userInfo").innerText =
+      `User: ${user.first_name} (ID: ${telegramId})`;
+  }
+
+  initUser();
+  
     /* === Init User from DB === */
     async function initUser() {
       let { data, error } = await supabase
@@ -158,3 +184,4 @@
   </script>
 </body>
 </html>
+
