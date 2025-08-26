@@ -129,3 +129,32 @@ footer button {
 footer button:hover {
   color: #ffe082;
 }
+/* Farm Grid Responsif */
+.farm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 15px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Slot card biar adaptif */
+.slot {
+  width: 100%;
+  max-width: 200px;   /* slot nggak jadi kegedean di layar kecil */
+  margin: auto;
+}
+
+/* Global Fix untuk MiniApp */
+body, html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden; /* cegah scroll horizontal */
+}
+
+.container {
+  padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
