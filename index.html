@@ -2,154 +2,231 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>Poki Pet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Poki Pet - Crypto Animal Farm</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; }
-    header { background: #4CAF50; color: white; padding: 10px; text-align: center; }
-    .user-info { background:#e0ffe0; padding:8px; font-size:14px; border-bottom:1px solid #ccc; }
-    .balance { margin: 10px; font-weight: bold; }
-    .menu { position: fixed; bottom: 0; left: 0; right: 0; background: white;
-      display: flex; justify-content: space-around; border-top: 1px solid #ccc; padding: 10px 0;
-    }
-    .menu button { border: none; background: none; font-size: 14px; }
-    .page { display: none; padding: 20px; }
-    .shop-item { background: white; padding: 10px; margin: 10px 0; border-radius: 10px; border: 1px solid #ccc; }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-
-  <!-- === HEADER === -->
+  <!-- Header -->
   <header>
-    Poki Pet - Crypto Animal Farm 🐔
+    Poki Pet [DEV MODE]
   </header>
 
-  <!-- === USER INFO === -->
-  <div id="userInfo" class="user-info">Loading user...</div>
-  <div class="balance">Coins: <span id="coins">0</span></div>
-
-  <!-- === FARM PAGE === -->
-  <div id="farmPage" class="page" style="display:block;">
-    <h3>My Farm</h3>
-    <div id="farmSlots">Coming soon...</div>
+  <!-- User Balance -->
+  <div class="container">
+    <div class="balance">Coins: <span id="coins">0</span></div>
   </div>
 
-  <!-- === SHOP PAGE === -->
-  <div id="shopPage" class="page">
-    <h3>Shop - Coming soon</h3>
+  <!-- ========== FARM PAGE ========== -->
+  <div class="container page" id="farm-page">
+    <h2>My Farm</h2>
+    <div class="farm-grid" id="farm-slots">
+      <!-- Slot akan di-render dari DB -->
+    </div>
   </div>
 
-  <!-- === DEPOSIT PAGE === -->
-  <div id="depositPage" class="page">
-    <h3>Deposit Coins</h3>
-    <button onclick="deposit(100)">Deposit +100 Coins</button>
-    <button onclick="deposit(500)">Deposit +500 Coins</button>
+  <!-- ========== SHOP PAGE ========== -->
+  <div class="container page" id="shop-page" style="display:none;">
+    <h2>Shop - Buy New Animals</h2>
+    <div id="shop-items"></div>
   </div>
 
-  <!-- === WITHDRAW PAGE === -->
-  <div id="withdrawPage" class="page">
-    <h3>Withdraw Coins</h3>
-    <input type="number" id="withdrawAmount" placeholder="Enter amount">
-    <button onclick="withdraw()">Withdraw</button>
+  <!-- ========== INVENTORY PAGE ========== -->
+  <div class="container page" id="inventory-page" style="display:none;">
+    <h2>Inventory</h2>
+    <div id="inventory-list"></div>
   </div>
 
-  <!-- === MENU PAGE === -->
-  <div id="menuPage" class="page">
-    <h3>Menu (Coming Soon)</h3>
+  <!-- ========== DEPOSIT PAGE ========== -->
+  <div class="container page" id="deposit-page" style="display:none;">
+    <h2>Deposit Coins</h2>
+    <div class="card">
+      <button onclick="deposit(100)">Deposit +100 Coins</button>
+      <button onclick="deposit(500)">Deposit +500 Coins</button>
+    </div>
   </div>
 
-  <!-- === BOTTOM MENU === -->
-  <div class="menu">
-    <button onclick="showTab('farmPage')">🐔 Farm</button>
-    <button onclick="showTab('shopPage')">🛒 Shop</button>
-    <button onclick="showTab('depositPage')">💰 Deposit</button>
-    <button onclick="showTab('withdrawPage')">🏦 Withdraw</button>
-    <button onclick="showTab('menuPage')">☰ Menu</button>
+  <!-- ========== WITHDRAW PAGE ========== -->
+  <div class="container page" id="withdraw-page" style="display:none;">
+    <h2>Withdraw Coins</h2>
+    <div class="card">
+      <input type="number" id="withdraw-amount" placeholder="Enter amount">
+      <button onclick="withdraw()">Withdraw</button>
+    </div>
   </div>
 
-  <!-- === SCRIPT === -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <!-- ========== MENU PAGE ========== -->
+  <div class="container page" id="menu-page" style="display:none;">
+    <h2>Menu (Coming Soon)</h2>
+    <p>More features will be added here.</p>
+  </div>
 
+  <!-- Footer Navigation -->
+  <footer>
+    <button onclick="showPage('farm-page')">Farm</button>
+    <button onclick="showPage('shop-page')">Shop</button>
+    <button onclick="showPage('inventory-page')">Inventory</button>
+    <button onclick="showPage('deposit-page')">Deposit</button>
+    <button onclick="showPage('withdraw-page')">Withdraw</button>
+    <button onclick="showPage('menu-page')">Menu</button>
+  </footer>
+
+  <!-- ========== SCRIPT SECTION ========== -->
   <script>
-    /* === Supabase Init === */
-    const supabaseUrl = "https://nxveoqzeoiuuweypawdd.supabase.co";   // ganti
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dmVvcXplb2l1dXdleXBhd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDgxMDcsImV4cCI6MjA3MTQyNDEwN30.pnoJHATNksB5rRbHJjQvUSatn6HW79jfEdFoBRt0zAM";              // ganti
-    const sb = supabase.createClient(supabaseUrl, supabaseKey);
+    /* =========================
+       INIT SUPABASE
+    ========================== */
+    const SUPABASE_URL = "https://nxveoqzeoiuuweypawdd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dmVvcXplb2l1dXdleXBhd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDgxMDcsImV4cCI6MjA3MTQyNDEwN30.pnoJHATNksB5rRbHJjQvUSatn6HW79jfEdFoBRt0zAM";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    /* === Telegram Init === */
-    let tg = window.Telegram.WebApp;
-    tg.expand();
-
-    let user = tg.initDataUnsafe?.user || { id: "999", first_name: "Tester" }; // fallback
-    let telegramId = parseInt(user.id);
+    let userId = 999; // dummy user
     let coins = 0;
 
-    console.log("initDataUnsafe:", tg.initDataUnsafe);
-    console.log("Parsed user:", user, "telegramId:", telegramId);
+    /* =========================
+       PAGE SWITCHER
+    ========================== */
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+      document.getElementById(pageId).style.display = 'block';
+    }
 
-    /* === Init User from DB === */
-    async function initUser() {
+    /* =========================
+       USER BALANCE
+    ========================== */
+    async function loadUser() {
       let { data, error } = await sb
         .from("users")
-        .select("*")
-        .eq("id", telegramId)
+        .select("coins")
+        .eq("id", userId)
         .single();
 
-      console.log("Supabase SELECT:", data, error);
-
-      if (error || !data) {
-        let { data: newUser, error: errInsert } = await sb
-          .from("users")
-          .insert({ id: telegramId, username: user.first_name, coins: 0 })
-          .select()
-          .single();
-        console.log("Supabase INSERT:", newUser, errInsert);
-        coins = newUser ? newUser.coins : 0;
+      if (error) {
+        console.error("Load user error:", error);
       } else {
         coins = data.coins;
+        document.getElementById("coins").innerText = coins;
       }
-
-      document.getElementById("coins").textContent = coins;
-      document.getElementById("userInfo").innerText =
-        `User: ${user.first_name} (ID: ${telegramId})`;
     }
 
-    initUser();
+    async function updateCoins(newCoins) {
+      let { error } = await sb
+        .from("users")
+        .update({ coins: newCoins })
+        .eq("id", userId);
 
-    /* === Deposit Function === */
+      if (error) console.error("Update coins error:", error);
+    }
+
+    /* =========================
+       FARM RENDER & CLAIM
+    ========================== */
+    async function renderFarm() {
+      let farmSlots = document.getElementById("farm-slots");
+
+      // contoh static sementara
+      farmSlots.innerHTML = `
+        <div class="slot">
+          <div class="pet-soil">
+            <div class="pet-emoji">🐔</div>
+            <div class="soil"></div>
+          </div>
+          <div class="pet-name">Chicken</div>
+          <div class="progress"><div class="progress-bar" style="width: 70%"></div></div>
+          <button onclick="claim(10)">Claim +10</button>
+        </div>
+        <div class="slot">
+          <div class="pet-soil">
+            <div class="pet-emoji">🦆</div>
+            <div class="soil"></div>
+          </div>
+          <div class="pet-name">Duck</div>
+          <div class="progress"><div class="progress-bar" style="width: 40%"></div></div>
+          <button onclick="claim(40)">Claim +40</button>
+        </div>
+        <div class="slot empty">
+          <div class="pet-soil"><div class="soil"></div></div>
+          <div class="pet-name">Empty</div>
+          <button>Add Pet</button>
+        </div>
+        <div class="slot locked">
+          <div class="pet-soil"><div class="soil"></div></div>
+          <div class="pet-name">Locked</div>
+          <button>Unlock (1000 coins)</button>
+        </div>
+      `;
+    }
+
+    async function claim(amount) {
+      coins += amount;
+      document.getElementById("coins").innerText = coins;
+      await updateCoins(coins);
+
+      await sb.from("transactions").insert([
+        { user_id: userId, type: "claim", amount: amount, currency: "$POKI" }
+      ]);
+    }
+
+    /* =========================
+       SHOP
+    ========================== */
+    async function renderShop() {
+      let shop = document.getElementById("shop-items");
+      shop.innerHTML = `
+        <div class="card">🐔 Chicken - 100 coins (Reward: 10 / 60s) <br><button>Buy</button></div>
+        <div class="card">🦆 Duck - 300 coins (Reward: 40 / 180s) <br><button>Buy</button></div>
+        <div class="card">🐐 Goat - 800 coins (Reward: 80 / 300s) <br><button>Buy</button></div>
+        <div class="card">🐄 Cow - 1500 coins (Reward: 200 / 600s) <br><button>Buy</button></div>
+      `;
+    }
+
+    /* =========================
+       INVENTORY
+    ========================== */
+    async function renderInventory() {
+      let inv = document.getElementById("inventory-list");
+      inv.innerHTML = `<p>No pets in inventory</p>`;
+    }
+
+    /* =========================
+       DEPOSIT / WITHDRAW
+    ========================== */
     async function deposit(amount) {
       coins += amount;
-      document.getElementById("coins").textContent = coins;
+      document.getElementById("coins").innerText = coins;
+      await updateCoins(coins);
 
-      await sb.from("users").update({ coins }).eq("id", telegramId);
-      await sb.from("transactions").insert({ user_id: telegramId, type: "deposit", amount });
-
-      console.log(`Deposited ${amount}, new balance: ${coins}`);
+      await sb.from("transactions").insert([
+        { user_id: userId, type: "deposit", amount: amount, currency: "$POKI" }
+      ]);
     }
 
-    /* === Withdraw Function === */
     async function withdraw() {
-      let amt = parseInt(document.getElementById("withdrawAmount").value);
-      if (isNaN(amt) || amt <= 0) return alert("Enter valid amount!");
-      if (coins < amt) return alert("Not enough coins!");
+      let amount = parseInt(document.getElementById("withdraw-amount").value);
+      if (amount > 0 && coins >= amount) {
+        coins -= amount;
+        document.getElementById("coins").innerText = coins;
+        await updateCoins(coins);
 
-      coins -= amt;
-      document.getElementById("coins").textContent = coins;
-
-      await sb.from("users").update({ coins }).eq("id", telegramId);
-      await sb.from("transactions").insert({ user_id: telegramId, type: "withdraw", amount: amt });
-
-      console.log(`Withdrew ${amt}, new balance: ${coins}`);
-      alert("Withdraw success (dummy, DB updated)");
+        await sb.from("transactions").insert([
+          { user_id: userId, type: "withdraw", amount: amount, currency: "$POKI" }
+        ]);
+      } else {
+        alert("Invalid withdraw amount");
+      }
     }
 
-    /* === Utility === */
-    function showTab(tab) {
-      document.querySelectorAll(".page").forEach(p => p.style.display = "none");
-      document.getElementById(tab).style.display = "block";
-    }
+    /* =========================
+       INIT APP
+    ========================== */
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadUser();
+      await renderFarm();
+      await renderShop();
+      await renderInventory();
+    });
   </script>
 </body>
 </html>
-
