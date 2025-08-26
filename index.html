@@ -79,89 +79,96 @@
 
     // 📌 Farm
     async function renderFarm() {
-      const div = document.getElementById("content");
-      div.innerHTML = "<h2>My Farm</h2>";
+  const farmSection = document.getElementById("farm-section");
+  farmSection.innerHTML = "<h2>My Farm</h2><div class='farm-grid' id='farmGrid'></div>";
 
-      let { data: pets } = await sb.from("user_pets")
-        .select("id, slot, last_claim, pet_id, pets(name, emoji, reward, interval)")
-        .eq("user_id", userId);
+  const { data: userData } = await sb
+    .from("users")
+    .select("farm_slots")
+    .eq("id", userId)
+    .single();
 
-      let petMap = {};
-      pets.forEach(p => petMap[p.slot] = p);
+  const { data: userPets } = await sb
+    .from("user_pets")
+    .select("slot, pet_id, last_claim, pets (name, emoji, reward, interval)")
+    .eq("user_id", userId);
 
-      const grid = document.createElement("div");
-      grid.className = "farm-grid";
+  const farmGrid = document.getElementById("farmGrid");
+  farmGrid.innerHTML = "";
 
-      for (let i = 1; i <= 4; i++) {
-        const card = document.createElement("div");
-        card.className = "slot-card";
+  for (let slot = 1; slot <= 4; slot++) {
+    let card = document.createElement("div");
+    card.className = "slot-card";
 
-        if (i <= currentUser.farm_slots) {
-          if (petMap[i]) {
-            const pet = petMap[i];
-            card.innerHTML = `
-              <div class="pet-emoji">${pet.pets.emoji}</div>
-              <div>${pet.pets.name}</div>
-              <div class="soil"></div>
-              <div class="progress"><div id="progress-${pet.id}" class="progress-bar"></div></div>
-              <button id="claim-${pet.id}" class="btn-claim">Loading...</button>
-            `;
-            setupTimer(pet);
-          } else {
-            card.innerHTML = `
-              <div class="soil"></div>
-              <p>Empty</p>
-              <button onclick="addPet(${i})">Add Pet</button>
-            `;
-          }
-        } else {
-          const cost = (i === 3 ? 500 : 1000);
-          card.innerHTML = `
-            <div class="soil"></div>
-            <p>Locked</p>
-            <button onclick="unlockSlot(${i}, ${cost})">Unlock (${cost} $POKI)</button>
-          `;
-        }
-        grid.appendChild(card);
+    if (slot <= userData.farm_slots) {
+      // Slot terbuka
+      const pet = userPets.find(p => p.slot === slot);
+
+      if (pet) {
+        // Ada pet di slot
+        card.innerHTML = `
+          <div class="pet-emoji">${pet.pets.emoji}</div>
+          <div>${pet.pets.name}</div>
+          <div class="soil"></div>
+          <div class="progress"><div class="progress-bar" id="progress-${slot}"></div></div>
+          <button class="btn-claim" id="claim-${slot}">Claim +${pet.pets.reward}</button>
+        `;
+        startTimer(slot, pet.last_claim, pet.pets.interval, pet.pets.reward, pet.pet_id);
+      } else {
+        // Slot kosong
+        card.innerHTML = `
+          <div class="soil"></div>
+          <p>Empty</p>
+          <button onclick="addPetToSlot(${slot})">Add Pet</button>
+        `;
       }
-      div.appendChild(grid);
+    } else {
+      // Slot locked
+      let unlockCost = slot === 2 ? 500 : slot === 3 ? 1000 : 2000;
+      card.innerHTML = `
+        <div class="soil"></div>
+        <p>Locked</p>
+        <button onclick="unlockSlot(${slot}, ${unlockCost})">Unlock (${unlockCost} $POKI)</button>
+      `;
     }
+
+    farmGrid.appendChild(card);
+  }
+}
 
     // ⏳ Timer for claim
-    function setupTimer(pet) {
-      const btn = document.getElementById(`claim-${pet.id}`);
-      const progress = document.getElementById(`progress-${pet.id}`);
-      const now = new Date();
-      const last = new Date(pet.last_claim);
-      const elapsed = Math.floor((now - last) / 1000);
-      let remaining = Math.max(0, pet.pets.interval - elapsed);
+    function startTimer(slot, lastClaim, interval, reward, petId) {
+  const claimBtn = document.getElementById(`claim-${slot}`);
+  const progressBar = document.getElementById(`progress-${slot}`);
 
-      function update() {
-        if (remaining > 0) {
-          btn.disabled = true;
-          btn.innerText = `Wait ${remaining}s`;
-          progress.style.width = `${((pet.pets.interval - remaining) / pet.pets.interval) * 100}%`;
-          remaining--;
-        } else {
-          btn.disabled = false;
-          btn.innerText = `Claim +${pet.pets.reward}`;
-          btn.onclick = () => claimReward(pet);
-          progress.style.width = "100%";
-          clearInterval(timer);
-        }
-      }
-      update();
-      const timer = setInterval(update, 1000);
-    }
+  function update() {
+    const now = Math.floor(Date.now() / 1000);
+    const last = Math.floor(new Date(lastClaim).getTime() / 1000);
+    const elapsed = now - last;
+    const percent = Math.min(100, (elapsed / interval) * 100);
+    progressBar.style.width = percent + "%";
 
-    async function claimReward(pet) {
-      const newCoins = currentUser.coins + pet.pets.reward;
-      await sb.from("users").update({ coins: newCoins }).eq("id", userId);
-      await sb.from("user_pets").update({ last_claim: new Date().toISOString() }).eq("id", pet.id);
-      currentUser.coins = newCoins;
-      updateUserInfo();
-      renderFarm();
+    if (elapsed >= interval) {
+      claimBtn.disabled = false;
+    } else {
+      claimBtn.disabled = true;
+      setTimeout(update, 1000);
     }
+  }
+
+  update();
+
+  claimBtn.onclick = async () => {
+    if (claimBtn.disabled) return;
+
+    // Update coin + last_claim di DB
+    await sb.rpc("claim_reward", { p_user_id: userId, p_pet_id: petId });
+
+    // Refresh farm
+    renderFarm();
+    loadUser();
+  };
+}
 
     // 📌 Shop
     async function renderShop() {
@@ -290,3 +297,4 @@
   </script>
 </body>
 </html>
+
