@@ -1,160 +1,193 @@
-/* Font & Body */
-body {
-  font-family: 'Baloo 2', cursive;
-  background: linear-gradient(135deg, #fdfbfb, #ebedee);
+/* ==== GLOBAL ==== */
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  color: #333;
 }
 
-/* Header */
+body {
+  font-family: 'Baloo 2', cursive;
+  background: linear-gradient(180deg, #f9fafb, #f1f5f9);
+  color: #333;
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==== HEADER ==== */
 header {
-  background: #6ec1e4;
+  background: #4db6e2;
   color: #fff;
-  padding: 15px;
+  padding: 12px;
+  font-size: 20px;
+  font-weight: bold;
   text-align: center;
-  font-size: 22px;
-  font-weight: 700;
-  border-bottom: 4px solid #4ba3c7;
+  letter-spacing: 1px;
 }
 
-/* Container */
+/* ==== CONTAINER ==== */
 .container {
-  max-width: 1000px;
-  margin: 20px auto;
+  flex: 1;
   padding: 15px;
-}
-.balance {
-  text-align: right;
-  font-size: 18px;
-  margin-bottom: 15px;
-  font-weight: 600;
-  color: #333;
-}
-
-/* Farm Grid */
-.farm-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
-
-/* Slot dasar */
-.slot {
-  background: #fff;
-  border-radius: 20px;
-  padding: 20px;
-  min-height: 260px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  box-shadow: 0 6px 0 #cfd8dc;
-}
-.slot.empty { opacity: 0.6; }
-.slot.locked { opacity: 0.5; filter: grayscale(1); }
-
-/* Pet + Soil wrapper */
-.pet-soil {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  flex-grow: 1;
-}
-.pet-emoji {
-  font-size: 48px;
-  margin-bottom: -10px;
-  position: relative;
-  z-index: 2;
-}
-.soil {
-  width: 100px;
-  height: 50px;
-  background: url('soil.png') center/contain no-repeat;
-  position: relative;
-  z-index: 1;
-}
-
-/* Progress bar */
-.progress {
   width: 100%;
-  height: 12px;
-  background: #eee;
-  border-radius: 10px;
-  margin: 10px 0;
-  overflow: hidden;
-}
-.progress-bar {
-  height: 100%;
-  background: #4caf50;
-  width: 50%;
-  transition: width 0.3s linear;
-}
-
-/* Buttons */
-button {
-  background: #ffca28;
-  color: #333;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s, background 0.2s;
-  margin-top: auto;
-}
-button:hover {
-  background: #ffc107;
-  transform: scale(1.05);
-}
-
-/* Footer nav */
-footer {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background: #6ec1e4;
-  border-top: 4px solid #4ba3c7;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-}
-footer button {
-  background: none;
-  color: white;
-  font-weight: 700;
-  font-size: 14px;
-}
-footer button:hover {
-  color: #ffe082;
-}
-/* Farm Grid Responsif */
-.farm-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 15px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* Slot card biar adaptif */
-.slot {
-  width: 100%;
-  max-width: 200px;   /* slot nggak jadi kegedean di layar kecil */
+  max-width: 960px;
   margin: auto;
 }
 
-/* Global Fix untuk MiniApp */
-body, html {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden; /* cegah scroll horizontal */
+/* ==== BALANCE ==== */
+.balance {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 15px;
 }
 
-.container {
-  padding: 10px;
-  width: 100%;
-  box-sizing: border-box;
+/* ==== FARM GRID ==== */
+.farm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 20px;
+  justify-items: center;
 }
 
+.slot {
+  background: #fff;
+  border-radius: 15px;
+  padding: 12px;
+  width: 100%;
+  max-width: 180px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ==== PET + SOIL ==== */
+.pet-soil {
+  position: relative;
+  height: 80px;
+}
+
+.pet-emoji {
+  font-size: 48px;
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.soil {
+  width: 90px;
+  height: 40px;
+  background: url('soil.png') center/contain no-repeat;
+  margin: 0 auto;
+  margin-top: 40px;
+  z-index: 1;
+}
+
+/* ==== PET NAME ==== */
+.pet-name {
+  font-size: 15px;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+/* ==== PROGRESS ==== */
+.progress {
+  background: #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  height: 10px;
+  margin: 10px 0;
+}
+
+.progress-bar {
+  background: #4caf50;
+  height: 100%;
+  width: 0;
+  transition: width 0.3s ease;
+}
+
+/* ==== BUTTON ==== */
+button {
+  font-family: 'Baloo 2', cursive;
+  font-size: 14px;
+  background: #ffd54f;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.2s;
+}
+
+button:hover {
+  background: #ffca28;
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==== CARD (SHOP / INVENTORY / DEPOSIT) ==== */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 10px auto;
+  max-width: 320px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ==== FOOTER ==== */
+footer {
+  background: #4db6e2;
+  padding: 6px;
+  display: flex;
+  justify-content: space-around;
+}
+
+footer button {
+  flex: 1;
+  font-size: 11px;
+  color: #fff;
+  background: none;
+  border: none;
+  padding: 4px;
+  line-height: 1.2;
+}
+
+footer button span {
+  display: block;
+  font-size: 10px;
+}
+
+/* ==== RESPONSIVE ==== */
+@media (max-width: 480px) {
+  .farm-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .slot {
+    max-width: 140px;
+    padding: 10px;
+  }
+
+  .pet-emoji {
+    font-size: 38px;
+  }
+
+  .soil {
+    width: 70px;
+    height: 30px;
+  }
+
+  footer button {
+    font-size: 10px;
+  }
+}
