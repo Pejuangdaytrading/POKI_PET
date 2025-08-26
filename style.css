@@ -1,107 +1,142 @@
+/* Reset & base */
 body {
-  font-family: 'Comic Sans MS', cursive, sans-serif;
   margin: 0;
+  font-family: 'Comic Neue', cursive;
   background: #f6f9fc;
   color: #333;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
+
 header {
-  background: #4ab1e3;
+  background: #4bb3e8;
   color: white;
+  padding: 12px;
   text-align: center;
-  padding: 10px;
 }
-header h1 { margin: 5px 0; }
-#user-info { font-size: 14px; }
 
-h2 { text-align: center; margin-top: 10px; }
+header h1 {
+  margin: 0;
+  font-size: 20px;
+}
 
-/* Section visibility */
-.page { display: none; padding: 10px; }
-.page.active { display: block; }
+#user-info {
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+}
 
 /* Farm Grid */
 .farm-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 15px;
-  padding: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
-/* Card Slot */
-.slot {
+.slot-card {
   background: white;
   border-radius: 12px;
-  padding: 10px;
+  padding: 12px;
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
 }
-.slot.locked { opacity: 0.6; }
 
-/* Pet */
-.pet-emoji { font-size: 42px; }
-.pet-name { margin: 5px 0; }
+.pet-emoji {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
 
-/* Soil */
 .soil {
-  width: 50px;
+  width: 40px;
   height: 20px;
-  background: #a0522d;
+  background: #9b6b43;
   border-radius: 50%;
-  margin: 5px auto;
+  margin: 6px auto;
 }
 
-/* Progress bar */
 .progress {
   width: 100%;
-  height: 8px;
   background: #eee;
-  border-radius: 5px;
-  margin: 5px 0;
+  border-radius: 6px;
+  height: 10px;
+  margin: 8px 0;
 }
+
 .progress-bar {
-  height: 100%;
+  height: 10px;
   background: #4caf50;
-  border-radius: 5px;
+  border-radius: 6px;
   width: 0%;
 }
 
-/* Buttons */
-button {
-  background: #ffcc33;
+.btn-claim, .slot-card button {
+  background: #ffd43b;
   border: none;
-  padding: 6px 12px;
-  margin-top: 6px;
+  padding: 6px 14px;
   border-radius: 20px;
   cursor: pointer;
   font-weight: bold;
 }
-button:disabled {
+
+.btn-claim:disabled {
   background: #ccc;
   cursor: not-allowed;
 }
 
-/* Grid (Shop/Inventory) */
-.grid {
+/* Shop & Inventory Grid */
+.shop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 15px;
-  padding: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 10px;
 }
 
-/* Footer Nav */
-footer {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: #4ab1e3;
+.pet-card {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
 }
-footer nav {
+
+.pet-card .pet-emoji {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+/* Footer Navbar */
+footer {
   display: flex;
   justify-content: space-around;
-  padding: 5px 0;
+  align-items: center;
+  background: #4bb3e8;
+  padding: 6px 0;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  border-top: 2px solid #3a9ecf;
 }
-footer nav a {
-  color: white;
+
+.nav-item {
+  flex: 1;
   text-align: center;
   font-size: 12px;
-  text-decoration: none;
+  color: white;
+  cursor: pointer;
+}
+
+.nav-item span {
+  font-size: 11px;
+  display: block;
+}
+
+.nav-item:hover {
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px;
 }
