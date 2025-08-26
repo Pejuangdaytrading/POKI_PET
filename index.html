@@ -3,46 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Poki Pet</title>
+  <title>Poki Pet Final</title>
   <style>
     body { font-family: 'Comic Sans MS', sans-serif; margin:0; background:#f7f9fc; }
     header { background:#4aa3df; color:white; padding:10px; text-align:center; font-size:20px; font-weight:bold; }
     .user-info { text-align:center; font-size:14px; padding:5px; color:#333; }
     .page { display:none; padding:15px; }
     h2 { margin:10px 0; }
-
-    /* Grid */
     .grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; }
-    .card {
-      border-radius:12px; padding:15px; text-align:center; color:#333;
-      box-shadow:0 3px 6px rgba(0,0,0,0.1); font-size:14px;
-    }
-    .card img { width:40px; height:40px; }
+    .card { border-radius:12px; padding:15px; text-align:center; color:#333; box-shadow:0 3px 6px rgba(0,0,0,0.1); font-size:14px; background:#fff; }
     .slot-locked { background:#eee; color:#777; }
     .slot-empty { background:#fff; }
-
-    /* Shop Cards by Pet */
     .pet-chicken { background:#fffbe6; }
     .pet-duck { background:#e6fff5; }
     .pet-goat { background:#f9e6ff; }
     .pet-cow { background:#ffe6e6; }
-
-    /* Progress */
-    .progress { width:100%; height:10px; background:#ddd; border-radius:6px; margin:8px 0; }
-    .progress-bar { height:10px; width:0%; background:#4caf50; border-radius:6px; transition:width 0.3s; }
-
-    /* Buttons */
-    button {
-      background:#ffca28; border:none; border-radius:8px;
-      padding:6px 12px; font-weight:bold; cursor:pointer; margin-top:6px;
-    }
+    .progress { width:100%; height:10px; background:#ddd; border-radius:6px; margin:8px 0; overflow:hidden; }
+    .progress-bar { height:10px; width:0%; background:#4caf50; border-radius:6px; transition:width 0.5s ease; }
+    .progress-bar.full { background:#00e676; }
+    button { background:#ffca28; border:none; border-radius:8px; padding:6px 12px; font-weight:bold; cursor:pointer; margin-top:6px; }
     button:hover:not(:disabled) { background:#ffc107; }
     button:disabled { background:#ccc; color:#666; cursor:not-allowed; }
-
-    /* Footer Menu */
-    .menu { position:fixed; bottom:0; left:0; right:0; background:#4aa3df; display:flex;
-      justify-content:space-around; padding:8px 0; }
+    .menu { position:fixed; bottom:0; left:0; right:0; background:#4aa3df; display:flex; justify-content:space-around; padding:8px 0; }
     .menu button { background:none; border:none; color:white; font-size:12px; display:flex; flex-direction:column; align-items:center; }
+
+    /* Efek interaktif untuk card di Shop & Inventory */
+    #shopItems .card, #inventoryItems .card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+    #shopItems .card:hover, #inventoryItems .card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Modal */
+    .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000; }
+    .modal { background:#fff; padding:20px; border-radius:12px; max-width:300px; text-align:center; }
+    .modal button { display:block; width:100%; margin:6px 0; }
+
+    /* Toast */
+    .toast { position:fixed; top:20px; right:20px; background:#333; color:#fff; padding:10px 16px; border-radius:8px; opacity:0; transform:translateY(-20px); transition:all 0.4s ease; z-index:2000; }
+    .toast.show { opacity:1; transform:translateY(0); }
   </style>
 </head>
 <body>
@@ -70,15 +72,42 @@
   <!-- DEPOSIT -->
   <div id="depositPage" class="page">
     <h2>Deposit</h2>
-    <button onclick="deposit(1,'USDT')">Deposit 1 USDT → 10000 $POKI</button>
-    <button onclick="deposit(10000,'POKI')">Deposit 10000 $POKI</button>
+    <div style="margin-bottom:10px;">
+      <label>Enter USDT: </label><br>
+      <input type="number" id="usdtAmount" placeholder="Amount USDT" 
+             oninput="updatePokiEquivalent()" 
+             style="padding:8px; border-radius:6px; border:1px solid #ccc; width:90%; max-width:250px;">
+    </div>
+    <div id="pokiEquivalent" style="margin-bottom:15px; font-weight:bold; color:#333;">
+      You will receive: 0 $POKI
+    </div>
+    <button onclick="depositUSDT()">💰 Deposit</button>
   </div>
 
   <!-- WITHDRAW -->
   <div id="withdrawPage" class="page">
     <h2>Withdraw</h2>
-    <input type="number" id="withdrawAmount" placeholder="Amount $POKI">
-    <button onclick="withdraw()">Withdraw</button>
+    <div style="margin-bottom:10px;">
+      <label>Enter $POKI: </label><br>
+      <input type="number" id="withdrawPoki" placeholder="Amount $POKI" 
+             oninput="updateUSDTEquivalent()" 
+             style="padding:8px; border-radius:6px; border:1px solid #ccc; width:90%; max-width:250px;">
+    </div>
+    <div id="usdtEquivalent" style="margin-bottom:15px; font-weight:bold; color:#333;">
+      You will receive: 0 USDT
+    </div>
+    <div style="margin-bottom:15px;">
+      <label>FaucetPay Email (optional):</label><br>
+      <input type="email" id="faucetEmail" placeholder="FaucetPay Email" 
+             style="padding:8px; border-radius:6px; border:1px solid #ccc; width:90%; max-width:250px;">
+    </div>
+    <button onclick="withdrawPoki()">🏦 Withdraw</button>
+    <div style="margin-top:15px;">
+      <small>Don't have FaucetPay?</small><br>
+      <a href="https://faucetpay.io/?r=37006" target="_blank">
+        <button>📝 Register FaucetPay</button>
+      </a>
+    </div>
   </div>
 
   <!-- MENU -->
@@ -94,47 +123,67 @@
     <button onclick="showTab('menuPage')">⚙️<span>Menu</span></button>
   </div>
 
+  <!-- Toast container -->
+  <div id="toast" class="toast"></div>
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js"></script>
 <script>
 const sb = supabase.createClient("https://nxveoqzeoiuuweypawdd.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dmVvcXplb2l1dXdleXBhd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDgxMDcsImV4cCI6MjA3MTQyNDEwN30.pnoJHATNksB5rRbHJjQvUSatn6HW79jfEdFoBRt0zAM");
-const tg = window.Telegram.WebApp; tg.expand();
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+// Dummy user untuk browser
 const tgUser = tg.initDataUnsafe?.user || { id:999, username:"DevTester" };
 let currentUser={};
+const rateUSDT = 10000; // 1 USDT = 10000 POKI
+
+/* Toast */
+function showToast(msg){
+  let toast=document.getElementById("toast");
+  toast.innerText=msg;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"),2000);
+}
 
 /* Load user */
 async function loadUser(){
   let {data:users}=await sb.from("users").select("*").eq("id",tgUser.id).single();
   if(!users){
-    await sb.from("users").insert({id:tgUser.id,username:tgUser.username,coins:1000,farm_slots:1});
-    users={id:tgUser.id,username:tgUser.username,coins:1000,farm_slots:1};
+    await sb.from("users").insert({id:tgUser.id,username:tgUser.username,coins:100,farm_slots:1});
+    users={id:tgUser.id,username:tgUser.username,coins:100,farm_slots:1};
   }
   currentUser=users;
   document.getElementById("userInfo").innerText=`User: ${users.username} | Coins: ${users.coins}`;
-  renderFarm();
-  renderShop();
-  renderInventory();
+  renderFarm(); renderShop(); renderInventory();
 }
 
 /* FARM */
 async function renderFarm(){
-  let farm=document.getElementById("farmSlots");
-  farm.innerHTML="";
-  // get pets in farm
+  let farm=document.getElementById("farmSlots"); farm.innerHTML="";
   let {data:userPets}=await sb.from("user_pets").select("*, pets(*)").eq("user_id",tgUser.id);
+
   for(let i=1;i<=4;i++){
     let slotPet=userPets.find(p=>p.slot===i);
     let div=document.createElement("div"); div.className="card";
+
     if(i<=currentUser.farm_slots){
       if(slotPet){
         div.innerHTML=`
           <div>${slotPet.pets.emoji} ${slotPet.pets.name}</div>
           <div class="progress"><div class="progress-bar" id="progress-${slotPet.id}"></div></div>
           <button id="claim-${slotPet.id}" onclick="claim(${slotPet.id},${slotPet.pets.reward},${slotPet.pets.interval})">Claim +${slotPet.pets.reward}</button>
+          <button onclick="openReplaceModal(${i})">Replace Pet</button>
         `;
         startProgressTimer(slotPet.id, slotPet.last_claim, slotPet.pets.interval);
       } else {
-        div.innerHTML=`<div class="slot-empty">Empty</div>`;
+        let invPets=userPets.filter(p=>p.slot===null || p.slot===0);
+        if(invPets.length>0){
+          div.innerHTML=`<div class="slot-empty">Empty</div>
+                         <button onclick="openAddModal(${i})">Add from Inventory</button>`;
+        } else {
+          div.innerHTML=`<div class="slot-empty">Empty</div>`;
+        }
       }
     } else {
       let cost=i*500;
@@ -143,6 +192,87 @@ async function renderFarm(){
     }
     farm.appendChild(div);
   }
+}
+
+/* Progress Timer */
+function startProgressTimer(id,lastClaim,interval){
+  let btn=document.getElementById("claim-"+id); 
+  let bar=document.getElementById("progress-"+id);
+  let last=new Date(lastClaim).getTime(); 
+  let next=last+interval*1000;
+  let timer=setInterval(()=>{
+    let now=Date.now(); 
+    let pct=((now-last)/(next-last))*100;
+    if(pct>=100){
+      bar.style.width="100%"; 
+      bar.classList.add("full");
+      btn.disabled=false; 
+      clearInterval(timer);
+    } else {
+      bar.style.width=pct+"%"; 
+      bar.classList.remove("full");
+      btn.disabled=true;
+    }
+  },1000);
+}
+
+/* Modal Utils */
+function createModal(title,items,callback){
+  let overlay=document.createElement("div");
+  overlay.className="modal-overlay";
+  let modal=document.createElement("div");
+  modal.className="modal";
+  modal.innerHTML=`<h3>${title}</h3>`;
+  items.forEach(it=>{
+    let b=document.createElement("button");
+    b.innerText=`${it.pets.emoji} ${it.pets.name}`;
+    b.onclick=()=>{ callback(it); overlay.remove(); };
+    modal.appendChild(b);
+  });
+  let cancel=document.createElement("button");
+  cancel.innerText="Cancel";
+  cancel.onclick=()=>overlay.remove();
+  modal.appendChild(cancel);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+/* Add from Inventory Modal */
+async function openAddModal(slot){
+  let {data:userPets}=await sb.from("user_pets").select("*, pets(*)").eq("user_id",tgUser.id);
+  let invPets=userPets.filter(p=>p.slot===null || p.slot===0);
+  if(invPets.length==0){alert("No pets in inventory!"); return;}
+  createModal("Add Pet to Slot "+slot,invPets,async chosen=>{
+    await sb.from("user_pets").update({slot:slot}).eq("id",chosen.id);
+    showToast(`${chosen.pets.emoji} ${chosen.pets.name} added!`);
+    renderFarm(); renderInventory();
+  });
+}
+
+/* Replace Modal */
+async function openReplaceModal(slot){
+  let {data:userPets}=await sb.from("user_pets").select("*, pets(*)").eq("user_id",tgUser.id);
+  let invPets=userPets.filter(p=>p.slot===null || p.slot===0);
+  if(invPets.length==0){alert("No pets in inventory to replace!"); return;}
+  createModal("Replace Slot "+slot,invPets,async chosen=>{
+    await sb.from("user_pets").update({slot:null}).eq("slot",slot).eq("user_id",tgUser.id);
+    await sb.from("user_pets").update({slot:slot}).eq("id",chosen.id);
+    showToast(`${chosen.pets.emoji} ${chosen.pets.name} placed!`);
+    renderFarm(); renderInventory();
+  });
+}
+
+/* Claim */
+async function claim(userPetId,reward,interval){
+  let btn=document.getElementById("claim-"+userPetId); btn.disabled=true;
+  let newCoins=currentUser.coins+reward;
+  await sb.from("users").update({coins:newCoins}).eq("id",tgUser.id);
+  await sb.from("user_pets").update({last_claim:new Date().toISOString()}).eq("id",userPetId);
+  currentUser.coins=newCoins;
+  document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
+  let bar=document.getElementById("progress-"+userPetId); if(bar) bar.style.width="0%";
+  startProgressTimer(userPetId,new Date(),interval);
+  showToast(`+${reward} coins claimed!`);
 }
 
 /* Shop */
@@ -158,7 +288,7 @@ async function renderShop(){
   });
 }
 
-/* Inventory */
+/* Inventory = display only */
 async function renderInventory(){
   let {data:userPets}=await sb.from("user_pets").select("*, pets(*)").eq("user_id",tgUser.id);
   let inv=document.getElementById("inventoryItems"); inv.innerHTML="";
@@ -171,29 +301,6 @@ async function renderInventory(){
   });
 }
 
-/* Claim */
-async function claim(userPetId,reward,interval){
-  let btn=document.getElementById("claim-"+userPetId); btn.disabled=true;
-  let newCoins=currentUser.coins+reward;
-  await sb.from("users").update({coins:newCoins}).eq("id",tgUser.id);
-  await sb.from("user_pets").update({last_claim:new Date().toISOString()}).eq("id",userPetId);
-  currentUser.coins=newCoins;
-  document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
-  let bar=document.getElementById("progress-"+userPetId); if(bar) bar.style.width="0%";
-  startProgressTimer(userPetId,new Date(),interval);
-}
-
-/* Timer */
-function startProgressTimer(id,lastClaim,interval){
-  let btn=document.getElementById("claim-"+id); let bar=document.getElementById("progress-"+id);
-  let last=new Date(lastClaim).getTime(); let next=last+interval*1000;
-  let timer=setInterval(()=>{
-    let now=Date.now(); let pct=((now-last)/(next-last))*100;
-    if(pct>=100){bar.style.width="100%"; btn.disabled=false; clearInterval(timer);}
-    else {bar.style.width=pct+"%"; btn.disabled=true;}
-  },1000);
-}
-
 /* Unlock Slot */
 async function unlockSlot(slot,cost){
   if(currentUser.coins<cost){alert("Not enough $POKI!"); return;}
@@ -201,6 +308,7 @@ async function unlockSlot(slot,cost){
   await sb.from("users").update({coins:newCoins,farm_slots:slot}).eq("id",tgUser.id);
   currentUser.coins=newCoins; currentUser.farm_slots=slot;
   document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
+  showToast(`Slot ${slot} unlocked!`);
   renderFarm();
 }
 
@@ -208,43 +316,86 @@ async function unlockSlot(slot,cost){
 async function buyPet(petId){
   let {data:pets}=await sb.from("pets").select("*").eq("id",petId).single();
   if(currentUser.coins<pets.price){alert("Not enough $POKI!"); return;}
-  // find empty slot
   let {data:userPets}=await sb.from("user_pets").select("*").eq("user_id",tgUser.id);
   let slots=userPets.map(p=>p.slot);
   let slotNum=1; while(slots.includes(slotNum)&&slotNum<=currentUser.farm_slots) slotNum++;
-  if(slotNum>currentUser.farm_slots){alert("No empty slot!"); return;}
-  await sb.from("user_pets").insert({user_id:tgUser.id,pet_id:petId,slot:slotNum,last_claim:new Date().toISOString()});
+  if(slotNum>currentUser.farm_slots){
+    await sb.from("user_pets").insert({user_id:tgUser.id,pet_id:petId,slot:null,last_claim:new Date().toISOString()});
+  } else {
+    await sb.from("user_pets").insert({user_id:tgUser.id,pet_id:petId,slot:slotNum,last_claim:new Date().toISOString()});
+  }
   let newCoins=currentUser.coins-pets.price;
   await sb.from("users").update({coins:newCoins}).eq("id",tgUser.id);
   currentUser.coins=newCoins;
   document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
+  showToast(`${pets.emoji} ${pets.name} bought!`);
   renderFarm(); renderInventory();
 }
 
 /* Deposit */
-async function deposit(amount,currency){
-  let pokiAmt=currency=="USDT"?amount*10000:amount;
-  let newCoins=currentUser.coins+pokiAmt;
+function updatePokiEquivalent(){
+  let usdt = parseFloat(document.getElementById("usdtAmount").value) || 0;
+  let poki = usdt * rateUSDT;
+  document.getElementById("pokiEquivalent").innerText = `You will receive: ${poki} $POKI`;
+}
+
+async function depositUSDT(){
+  let usdt = parseFloat(document.getElementById("usdtAmount").value);
+  if(isNaN(usdt) || usdt<=0){alert("Enter valid USDT amount!"); return;}
+  let pokiAmt = usdt * rateUSDT;
+  let newCoins = currentUser.coins + pokiAmt;
+
   await sb.from("users").update({coins:newCoins}).eq("id",tgUser.id);
-  await sb.from("transactions").insert({user_id:tgUser.id,type:"deposit",amount:amount,currency:currency,poki_amount:pokiAmt,rate:currency=="USDT"?10000:1});
+  await sb.from("transactions").insert({
+    user_id:tgUser.id,
+    type:"deposit",
+    amount:usdt,
+    currency:"USDT",
+    poki_amount:pokiAmt,
+    rate:rateUSDT
+  });
+
   currentUser.coins=newCoins;
   document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
+  showToast(`Deposited ${usdt} USDT → ${pokiAmt} $POKI`);
 }
 
 /* Withdraw */
-async function withdraw(){
-  let amt=parseInt(document.getElementById("withdrawAmount").value);
-  if(isNaN(amt)||amt<=0)return;
-  if(currentUser.coins<amt){alert("Not enough $POKI!");return;}
+function updateUSDTEquivalent(){
+  let poki = parseFloat(document.getElementById("withdrawPoki").value) || 0;
+  let usdt = poki / rateUSDT;
+  document.getElementById("usdtEquivalent").innerText = `You will receive: ${usdt.toFixed(4)} USDT`;
+}
+
+async function withdrawPoki(){
+  let amt=parseInt(document.getElementById("withdrawPoki").value);
+  if(isNaN(amt) || amt<=0){alert("Enter valid amount!"); return;}
+  if(currentUser.coins<amt){alert("Not enough $POKI!"); return;}
+  
+  let email = document.getElementById("faucetEmail").value || null;
   let newCoins=currentUser.coins-amt;
+
   await sb.from("users").update({coins:newCoins}).eq("id",tgUser.id);
-  await sb.from("transactions").insert({user_id:tgUser.id,type:"withdraw",amount:amt,currency:"$POKI",poki_amount:amt,rate:1});
+  await sb.from("transactions").insert({
+    user_id:tgUser.id,
+    type:"withdraw",
+    amount:amt,
+    currency:"$POKI",
+    poki_amount:amt,
+    rate:rateUSDT,
+    faucet_email: email
+  });
+
   currentUser.coins=newCoins;
   document.getElementById("userInfo").innerText=`User: ${currentUser.username} | Coins: ${newCoins}`;
+  showToast(`Withdrew ${amt} $POKI (${(amt/rateUSDT).toFixed(4)} USDT)`);
 }
 
 /* Show Tabs */
-function showTab(tab){document.querySelectorAll(".page").forEach(p=>p.style.display="none");document.getElementById(tab).style.display="block";}
+function showTab(tab){
+  document.querySelectorAll(".page").forEach(p=>p.style.display="none");
+  document.getElementById(tab).style.display="block";
+}
 
 loadUser();
 </script>
