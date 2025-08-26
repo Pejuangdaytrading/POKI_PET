@@ -1,300 +1,281 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Poki Pet</title>
-  <link rel="stylesheet" href="style.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+  <!-- Header -->
   <header>
-    <h1>Poki Pet</h1>
-    <div id="user-info">Loading...</div>
+    Poki Pet
   </header>
 
-  <main id="content"></main>
+  <!-- User Balance -->
+  <div class="container">
+    <div class="balance">Coins: <span id="coins">0</span></div>
+  </div>
 
+  <!-- FARM PAGE -->
+  <div class="container page" id="farm-page">
+    <h2>My Farm</h2>
+    <div class="farm-grid" id="farm-slots"></div>
+  </div>
+
+  <!-- SHOP PAGE -->
+  <div class="container page" id="shop-page" style="display:none;">
+    <h2>Shop - Buy New Animals</h2>
+    <div id="shop-items"></div>
+  </div>
+
+  <!-- INVENTORY PAGE -->
+  <div class="container page" id="inventory-page" style="display:none;">
+    <h2>Inventory</h2>
+    <div id="inventory-list"></div>
+  </div>
+
+  <!-- DEPOSIT PAGE -->
+  <div class="container page" id="deposit-page" style="display:none;">
+    <h2>Deposit Coins</h2>
+    <div class="card">
+      <button onclick="deposit(100)">Deposit +100 Coins</button>
+      <button onclick="deposit(500)">Deposit +500 Coins</button>
+    </div>
+  </div>
+
+  <!-- WITHDRAW PAGE -->
+  <div class="container page" id="withdraw-page" style="display:none;">
+    <h2>Withdraw Coins</h2>
+    <div class="card">
+      <input type="number" id="withdraw-amount" placeholder="Enter amount">
+      <button onclick="withdraw()">Withdraw</button>
+    </div>
+  </div>
+
+  <!-- MENU PAGE -->
+  <div class="container page" id="menu-page" style="display:none;">
+    <h2>Menu (Coming Soon)</h2>
+    <p>More features will be added here.</p>
+  </div>
+
+  <!-- Footer Navigation -->
   <footer>
-    <div class="nav-item" onclick="showPage('farm')">🏡<br><span>Farm</span></div>
-    <div class="nav-item" onclick="showPage('shop')">🛒<br><span>Shop</span></div>
-    <div class="nav-item" onclick="showPage('inventory')">📦<br><span>Inventory</span></div>
-    <div class="nav-item" onclick="showPage('deposit')">💰<br><span>Deposit</span></div>
-    <div class="nav-item" onclick="showPage('withdraw')">🏦<br><span>Withdraw</span></div>
-    <div class="nav-item" onclick="showPage('menu')">⚙️<br><span>Menu</span></div>
+    <button onclick="showPage('farm-page')">Farm</button>
+    <button onclick="showPage('shop-page')">Shop</button>
+    <button onclick="showPage('inventory-page')">Inventory</button>
+    <button onclick="showPage('deposit-page')">Deposit</button>
+    <button onclick="showPage('withdraw-page')">Withdraw</button>
+    <button onclick="showPage('menu-page')">Menu</button>
   </footer>
 
+  <!-- SCRIPT -->
   <script>
-    // 🔑 Supabase Init
+    /* =========================
+       INIT SUPABASE + TELEGRAM
+    ========================== */
     const SUPABASE_URL = "https://nxveoqzeoiuuweypawdd.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dmVvcXplb2l1dXdleXBhd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDgxMDcsImV4cCI6MjA3MTQyNDEwN30.pnoJHATNksB5rRbHJjQvUSatn6HW79jfEdFoBRt0zAM";
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dmVvcXplb2l1dXdleXBhd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDgxMDcsImV4cCI6MjA3MTQyNDEwN30.pnoJHATNksB5rRbHJjQvUSatn6HW79jfEdFoBRt0zAM";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // 🔑 Telegram WebApp User
     const tg = window.Telegram.WebApp;
     tg.expand();
-    let tgUser = tg.initDataUnsafe?.user;
-    let userId = tgUser?.id;
-    let username = tgUser?.username || ("tg" + userId);
+    const tgUser = tg.initDataUnsafe?.user;
+    const userId = tgUser.id;
+    const username = tgUser.username || tgUser.first_name;
 
-    // ⏳ Global State
-    let currentUser = null;
+    let coins = 0;
+    let petsData = {}; // cache data pets (id, reward, interval)
+    let timers = {};   // simpan interval countdown
 
-    // 🚀 Init
-    async function init() {
-      await loadUser();
-      showPage("farm");
+    /* =========================
+       PAGE SWITCHER
+    ========================== */
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+      document.getElementById(pageId).style.display = 'block';
     }
 
-    // 📌 Load / Create User
+    /* =========================
+       LOAD USER
+    ========================== */
     async function loadUser() {
-      let { data: user, error } = await sb.from("users")
-        .select("*").eq("id", userId).single();
+      let { data, error } = await sb
+        .from("users")
+        .select("*")
+        .eq("id", userId)
+        .single();
 
-      if (!user) {
-        let { data: newUser } = await sb.from("users")
-          .insert([{ id: userId, username, coins: 1000, farm_slots: 1 }])
-          .select().single();
-        user = newUser;
+      if (error && error.code === "PGRST116") {
+        // User belum ada → insert default
+        await sb.from("users").insert([
+          { id: userId, username: username, coins: 1000, farm_slots: 1 }
+        ]);
+        coins = 1000;
+      } else if (data) {
+        coins = data.coins;
       }
-      currentUser = user;
-      updateUserInfo();
+      document.getElementById("coins").innerText = coins;
     }
 
-    function updateUserInfo() {
-      document.getElementById("user-info").innerHTML =
-        `User: ${currentUser.username} | Coins: ${currentUser.coins}`;
+    async function updateCoins(newCoins) {
+      coins = newCoins;
+      document.getElementById("coins").innerText = coins;
+      await sb.from("users").update({ coins: newCoins }).eq("id", userId);
     }
 
-    // 📌 Router
-    function showPage(page) {
-      if (page === "farm") renderFarm();
-      if (page === "shop") renderShop();
-      if (page === "inventory") renderInventory();
-      if (page === "deposit") renderDeposit();
-      if (page === "withdraw") renderWithdraw();
-      if (page === "menu") renderMenu();
-    }
-
-    // 📌 Farm
-    async function renderFarm() {
-  const farmSection = document.getElementById("farm-section");
-  farmSection.innerHTML = "<h2>My Farm</h2><div class='farm-grid' id='farmGrid'></div>";
-
-  const { data: userData } = await sb
-    .from("users")
-    .select("farm_slots")
-    .eq("id", userId)
-    .single();
-
-  const { data: userPets } = await sb
-    .from("user_pets")
-    .select("slot, pet_id, last_claim, pets (name, emoji, reward, interval)")
-    .eq("user_id", userId);
-
-  const farmGrid = document.getElementById("farmGrid");
-  farmGrid.innerHTML = "";
-
-  for (let slot = 1; slot <= 4; slot++) {
-    let card = document.createElement("div");
-    card.className = "slot-card";
-
-    if (slot <= userData.farm_slots) {
-      // Slot terbuka
-      const pet = userPets.find(p => p.slot === slot);
-
-      if (pet) {
-        // Ada pet di slot
-        card.innerHTML = `
-          <div class="pet-emoji">${pet.pets.emoji}</div>
-          <div>${pet.pets.name}</div>
-          <div class="soil"></div>
-          <div class="progress"><div class="progress-bar" id="progress-${slot}"></div></div>
-          <button class="btn-claim" id="claim-${slot}">Claim +${pet.pets.reward}</button>
-        `;
-        startTimer(slot, pet.last_claim, pet.pets.interval, pet.pets.reward, pet.pet_id);
-      } else {
-        // Slot kosong
-        card.innerHTML = `
-          <div class="soil"></div>
-          <p>Empty</p>
-          <button onclick="addPetToSlot(${slot})">Add Pet</button>
-        `;
-      }
-    } else {
-      // Slot locked
-      let unlockCost = slot === 2 ? 500 : slot === 3 ? 1000 : 2000;
-      card.innerHTML = `
-        <div class="soil"></div>
-        <p>Locked</p>
-        <button onclick="unlockSlot(${slot}, ${unlockCost})">Unlock (${unlockCost} $POKI)</button>
-      `;
-    }
-
-    farmGrid.appendChild(card);
-  }
-}
-
-    // ⏳ Timer for claim
-    function startTimer(slot, lastClaim, interval, reward, petId) {
-  const claimBtn = document.getElementById(`claim-${slot}`);
-  const progressBar = document.getElementById(`progress-${slot}`);
-
-  function update() {
-    const now = Math.floor(Date.now() / 1000);
-    const last = Math.floor(new Date(lastClaim).getTime() / 1000);
-    const elapsed = now - last;
-    const percent = Math.min(100, (elapsed / interval) * 100);
-    progressBar.style.width = percent + "%";
-
-    if (elapsed >= interval) {
-      claimBtn.disabled = false;
-    } else {
-      claimBtn.disabled = true;
-      setTimeout(update, 1000);
-    }
-  }
-
-  update();
-
-  claimBtn.onclick = async () => {
-    if (claimBtn.disabled) return;
-
-    // Update coin + last_claim di DB
-    await sb.rpc("claim_reward", { p_user_id: userId, p_pet_id: petId });
-
-    // Refresh farm
-    renderFarm();
-    loadUser();
-  };
-}
-
-    // 📌 Shop
-    async function renderShop() {
-      const div = document.getElementById("content");
-      div.innerHTML = "<h2>Shop - Buy New Animals</h2>";
-
-      let { data: shopPets } = await sb.from("pets").select("*");
-      const grid = document.createElement("div");
-      grid.className = "shop-grid";
-
-      shopPets.forEach(p => {
-        const card = document.createElement("div");
-        card.className = "pet-card";
-        card.innerHTML = `
-          <div class="pet-emoji">${p.emoji}</div>
-          <h3>${p.name}</h3>
-          <p>${p.price} $POKI<br>Reward: ${p.reward} / ${p.interval}s</p>
-          <button onclick="buyPet(${p.id}, ${p.price})">Buy</button>
-        `;
-        grid.appendChild(card);
-      });
-      div.appendChild(grid);
-    }
-
-    async function buyPet(petId, price) {
-      if (currentUser.coins < price) return alert("Not enough coins!");
-      await sb.from("users").update({ coins: currentUser.coins - price }).eq("id", userId);
-      await sb.from("user_pets").insert([{ user_id: userId, pet_id: petId }]);
-      currentUser.coins -= price;
-      updateUserInfo();
-      alert("Pet bought! Check Inventory.");
-    }
-
-    // 📌 Inventory
-    async function renderInventory() {
-      const div = document.getElementById("content");
-      div.innerHTML = "<h2>Inventory</h2>";
-
-      let { data: inv } = await sb.from("user_pets")
-        .select("id, pet_id, pets(name, emoji)")
-        .eq("user_id", userId)
-        .is("slot", null);
-
-      if (!inv || inv.length === 0) {
-        div.innerHTML += "<p>No pets in inventory</p>";
-      } else {
-        const grid = document.createElement("div");
-        grid.className = "shop-grid";
-        inv.forEach(p => {
-          const card = document.createElement("div");
-          card.className = "pet-card";
-          card.innerHTML = `
-            <div class="pet-emoji">${p.pets.emoji}</div>
-            <h3>${p.pets.name}</h3>
-            <button onclick="placePet(${p.id})">Place</button>
-          `;
-          grid.appendChild(card);
+    /* =========================
+       LOAD PETS MASTER
+    ========================== */
+    async function loadPetsData() {
+      let { data, error } = await sb.from("pets").select("*");
+      if (!error && data) {
+        data.forEach(p => {
+          petsData[p.id] = p;
         });
-        div.appendChild(grid);
       }
     }
 
-    async function placePet(userPetId) {
-      // find empty slot
-      let { data: pets } = await sb.from("user_pets").select("slot").eq("user_id", userId);
-      let slots = pets.map(p => p.slot).filter(s => s != null);
-      let nextSlot = 1;
-      while (slots.includes(nextSlot)) nextSlot++;
-      await sb.from("user_pets").update({ slot: nextSlot, last_claim: new Date().toISOString() }).eq("id", userPetId);
+    /* =========================
+       RENDER FARM
+    ========================== */
+    async function renderFarm() {
+      let { data, error } = await sb
+        .from("user_pets")
+        .select("*, pets(name,emoji,reward,interval)")
+        .eq("user_id", userId)
+        .not("slot", "is", null)
+        .order("slot", { ascending: true });
+
+      let farmSlots = document.getElementById("farm-slots");
+      farmSlots.innerHTML = "";
+
+      for (let slot = 1; slot <= 4; slot++) {
+        let petSlot = data.find(d => d.slot === slot);
+
+        if (petSlot) {
+          let pet = petSlot.pets;
+          let lastClaim = new Date(petSlot.last_claim);
+          let interval = pet.interval * 1000;
+          let now = new Date();
+          let elapsed = now - lastClaim;
+          let remaining = Math.max(0, interval - elapsed);
+
+          // slot isi pet
+          let div = document.createElement("div");
+          div.className = "slot";
+          div.innerHTML = `
+            <div class="pet-soil">
+              <div class="pet-emoji">${pet.emoji}</div>
+              <div class="soil"></div>
+            </div>
+            <div class="pet-name">${pet.name}</div>
+            <div class="progress"><div class="progress-bar" id="progress-${petSlot.id}"></div></div>
+            <button id="claim-${petSlot.id}" disabled>Claim +${pet.reward}</button>
+          `;
+          farmSlots.appendChild(div);
+
+          // timer countdown
+          startTimer(petSlot.id, pet.reward, interval, remaining, lastClaim);
+        }
+        else {
+          // slot kosong
+          let div = document.createElement("div");
+          div.className = "slot empty";
+          div.innerHTML = `
+            <div class="pet-soil"><div class="soil"></div></div>
+            <div class="pet-name">Empty</div>
+            <button>Add Pet</button>
+          `;
+          farmSlots.appendChild(div);
+        }
+      }
+    }
+
+    /* =========================
+       TIMER & CLAIM
+    ========================== */
+    function startTimer(userPetId, reward, interval, remaining, lastClaim) {
+      const progressBar = document.getElementById(`progress-${userPetId}`);
+      const claimBtn = document.getElementById(`claim-${userPetId}`);
+
+      function updateUI(remain) {
+        let pct = Math.min(100, ((interval - remain) / interval) * 100);
+        progressBar.style.width = pct + "%";
+
+        if (remain <= 0) {
+          claimBtn.disabled = false;
+          claimBtn.onclick = () => claimReward(userPetId, reward, interval);
+        } else {
+          claimBtn.disabled = true;
+          claimBtn.onclick = null;
+        }
+      }
+
+      updateUI(remaining);
+
+      if (timers[userPetId]) clearInterval(timers[userPetId]);
+      timers[userPetId] = setInterval(() => {
+        remaining -= 1000;
+        updateUI(remaining);
+        if (remaining <= 0) {
+          clearInterval(timers[userPetId]);
+          updateUI(0);
+        }
+      }, 1000);
+    }
+
+    async function claimReward(userPetId, reward, interval) {
+      // update coin
+      await updateCoins(coins + reward);
+
+      // update last_claim
+      await sb.from("user_pets")
+        .update({ last_claim: new Date().toISOString() })
+        .eq("id", userPetId);
+
+      // log transaksi
+      await sb.from("transactions").insert([
+        { user_id: userId, type: "claim", amount: reward, currency: "$POKI" }
+      ]);
+
+      // re-render farm
       renderFarm();
     }
 
-    // 📌 Deposit
-    function renderDeposit() {
-      const div = document.getElementById("content");
-      div.innerHTML = "<h2>Deposit</h2>";
-      div.innerHTML += `<button onclick="depositUSDT(1)">Deposit 1 USDT → 10000 $POKI</button>`;
-      div.innerHTML += `<button onclick="depositPOKI(10000)">Deposit 10000 $POKI</button>`;
-    }
-
-    async function depositUSDT(amount) {
-      const poki = amount * 10000;
-      await sb.from("users").update({ coins: currentUser.coins + poki }).eq("id", userId);
-      await sb.from("transactions").insert([{ user_id: userId, type: "deposit", amount, currency: "USDT", poki_amount: poki, rate: 10000 }]);
-      currentUser.coins += poki;
-      updateUserInfo();
-      alert("Deposit success!");
-    }
-
-    async function depositPOKI(poki) {
-      await sb.from("users").update({ coins: currentUser.coins + poki }).eq("id", userId);
-      await sb.from("transactions").insert([{ user_id: userId, type: "deposit", amount: poki, currency: "$POKI", poki_amount: poki, rate: 1 }]);
-      currentUser.coins += poki;
-      updateUserInfo();
-      alert("Deposit success!");
-    }
-
-    // 📌 Withdraw
-    function renderWithdraw() {
-      const div = document.getElementById("content");
-      div.innerHTML = "<h2>Withdraw</h2>";
-      div.innerHTML += `
-        <input id="wdAmount" placeholder="Amount $POKI"/>
-        <button onclick="withdraw()">Withdraw</button>
-      `;
+    /* =========================
+       DEPOSIT & WITHDRAW
+    ========================== */
+    async function deposit(amount) {
+      await updateCoins(coins + amount);
+      await sb.from("transactions").insert([
+        { user_id: userId, type: "deposit", amount: amount, currency: "$POKI" }
+      ]);
     }
 
     async function withdraw() {
-      const amt = parseInt(document.getElementById("wdAmount").value);
-      if (amt > currentUser.coins) return alert("Not enough coins!");
-      await sb.from("users").update({ coins: currentUser.coins - amt }).eq("id", userId);
-      await sb.from("transactions").insert([{ user_id: userId, type: "withdraw", amount: amt, currency: "$POKI", poki_amount: amt, rate: 1 }]);
-      currentUser.coins -= amt;
-      updateUserInfo();
-      alert("Withdraw success!");
+      let amount = parseInt(document.getElementById("withdraw-amount").value);
+      if (amount > 0 && coins >= amount) {
+        await updateCoins(coins - amount);
+        await sb.from("transactions").insert([
+          { user_id: userId, type: "withdraw", amount: amount, currency: "$POKI" }
+        ]);
+      } else {
+        alert("Invalid withdraw amount");
+      }
     }
 
-    // 📌 Menu
-    function renderMenu() {
-      const div = document.getElementById("content");
-      div.innerHTML = "<h2>Menu (Coming Soon)</h2>";
-      div.innerHTML += "<p>@PokiPetBot</p>";
-    }
-
-    init();
+    /* =========================
+       INIT APP
+    ========================== */
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadUser();
+      await loadPetsData();
+      await renderFarm();
+    });
   </script>
 </body>
 </html>
-
