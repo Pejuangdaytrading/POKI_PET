@@ -1,0 +1,131 @@
+/* Font & Body */
+body {
+  font-family: 'Baloo 2', cursive;
+  background: linear-gradient(135deg, #fdfbfb, #ebedee);
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+/* Header */
+header {
+  background: #6ec1e4;
+  color: #fff;
+  padding: 15px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  border-bottom: 4px solid #4ba3c7;
+}
+
+/* Container */
+.container {
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 15px;
+}
+.balance {
+  text-align: right;
+  font-size: 18px;
+  margin-bottom: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Farm Grid */
+.farm-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* Slot dasar */
+.slot {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 6px 0 #cfd8dc;
+}
+.slot.empty { opacity: 0.6; }
+.slot.locked { opacity: 0.5; filter: grayscale(1); }
+
+/* Pet + Soil wrapper */
+.pet-soil {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  flex-grow: 1;
+}
+.pet-emoji {
+  font-size: 48px;
+  margin-bottom: -10px;
+  position: relative;
+  z-index: 2;
+}
+.soil {
+  width: 100px;
+  height: 50px;
+  background: url('soil.png') center/contain no-repeat;
+  position: relative;
+  z-index: 1;
+}
+
+/* Progress bar */
+.progress {
+  width: 100%;
+  height: 12px;
+  background: #eee;
+  border-radius: 10px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background: #4caf50;
+  width: 50%;
+  transition: width 0.3s linear;
+}
+
+/* Buttons */
+button {
+  background: #ffca28;
+  color: #333;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  margin-top: auto;
+}
+button:hover {
+  background: #ffc107;
+  transform: scale(1.05);
+}
+
+/* Footer nav */
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #6ec1e4;
+  border-top: 4px solid #4ba3c7;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+}
+footer button {
+  background: none;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+footer button:hover {
+  color: #ffe082;
+}
